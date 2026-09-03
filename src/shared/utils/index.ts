@@ -1,0 +1,1 @@
+export { mensajeDeError } from './errorApi';

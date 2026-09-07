@@ -1,0 +1,1 @@
+export { usePerfil } from './usePerfil';

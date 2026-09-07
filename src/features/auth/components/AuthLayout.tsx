@@ -1,6 +1,6 @@
 import { AlertCircle } from 'lucide-react-native';
 import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Container, Text } from '@/shared/ui/atoms';
@@ -29,10 +29,20 @@ export function AuthLayout({ titulo, subtitulo, error, children, footer }: AuthL
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      {/*
+        `padding` en las DOS plataformas, no solo en iOS.
+
+        Android traia `undefined`, que desactiva el componente: se confiaba en el
+        `adjustResize` del manifest, que redimensiona la ventana cuando aparece el
+        teclado. Pero la app dibuja edge-to-edge, y ahi la ventana ya ocupa toda
+        la pantalla y no se achica: el teclado se dibuja ENCIMA del formulario y
+        el ultimo campo queda tapado sin forma de llegar a el.
+
+        Con `padding`, el alto disponible se reduce de verdad, el ScrollView
+        vuelve a tener contenido que no entra y puede desplazarse hasta el campo
+        enfocado.
+      */}
+      <KeyboardAvoidingView style={styles.flex} behavior="padding">
         <ScrollView
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"

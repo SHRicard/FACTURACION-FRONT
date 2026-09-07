@@ -1,3 +1,6 @@
+export { ArranqueSesion } from './ArranqueSesion';
 export { AuthLayout } from './AuthLayout';
-export { CampoControlado } from './CampoControlado';
+export { BotonGoogle } from './BotonGoogle';
 export { EnlaceAuth } from './EnlaceAuth';
+export { LogoGoogle } from './LogoGoogle';
+export { RutaProtegida } from './RutaProtegida';

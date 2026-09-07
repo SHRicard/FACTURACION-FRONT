@@ -35,6 +35,9 @@ function ButtonComponent({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ disabled: bloqueado, busy: loading }}
+      // `sm` dibuja 36px de alto: el hitSlop devuelve el area tocable a 44+ sin
+      // agrandar el boton. En los otros tamanos solo da margen.
+      hitSlop={theme.spacing.xs}
       style={({ pressed }) => [
         styles.base,
         styles[size],
@@ -48,7 +51,7 @@ function ButtonComponent({
       {loading ? (
         <ActivityIndicator color={colorSpinner} />
       ) : (
-        <View style={styles.content}>
+        <View style={[styles.content, size === 'sm' && styles.smContent]}>
           {leftIcon}
           <Text style={[styles.label, styles[`${size}Label`], styles[`${variant}Label`]]}>
             {label}

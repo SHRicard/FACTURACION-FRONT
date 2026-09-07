@@ -1,11 +1,13 @@
-import { Button } from '@/shared/ui/atoms';
+import { Button, CampoControlado } from '@/shared/ui/atoms';
 
-import { AuthLayout, CampoControlado, EnlaceAuth } from '../components';
-import { useRegistro } from '../hooks';
+import { AuthLayout, BotonGoogle, EnlaceAuth } from '../components';
+import { useLoginGoogle, useRegistro } from '../hooks';
 
 /** Pantalla de creacion de cuenta. Al registrarse, la sesion queda abierta. */
 export function RegistroScreen() {
   const { form, enviar, cargando, error } = useRegistro();
+  // El mismo endpoint sirve para registrarse: si la cuenta no existe, la crea.
+  const google = useLoginGoogle();
 
   return (
     <AuthLayout
@@ -44,8 +46,8 @@ export function RegistroScreen() {
         name="password"
         label="Contrasena"
         required
-        placeholder="Minimo 8 caracteres"
-        helperText="Al menos 8 caracteres, con mayuscula, minuscula y numero."
+        placeholder="Minimo 6 caracteres"
+        helperText="Al menos 6 caracteres."
         secureTextEntry
         autoCapitalize="none"
         autoComplete="new-password"
@@ -67,7 +69,23 @@ export function RegistroScreen() {
         onSubmitEditing={enviar}
       />
 
-      <Button label="Crear cuenta" onPress={enviar} loading={cargando} fullWidth size="lg" />
+      <Button
+        label="Crear cuenta"
+        onPress={enviar}
+        loading={cargando}
+        disabled={google.cargando}
+        fullWidth
+        size="lg"
+      />
+
+      {google.disponible ? (
+        <BotonGoogle
+          onPress={google.entrar}
+          cargando={google.cargando}
+          deshabilitado={cargando}
+          error={google.error}
+        />
+      ) : null}
     </AuthLayout>
   );
 }

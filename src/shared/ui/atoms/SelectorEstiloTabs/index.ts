@@ -1,0 +1,1 @@
+export { SelectorEstiloTabs } from './SelectorEstiloTabs';

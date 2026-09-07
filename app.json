@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.anonymous.FACTURACIONFRONT"
+      "bundleIdentifier": "io.rrdev.facturacion"
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +19,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.FACTURACIONFRONT"
+      "package": "io.rrdev.facturacion"
     },
     "web": {
       "output": "static",
@@ -36,22 +36,40 @@
         }
       ],
       [
+        "./plugins/withPropiedadesGradle",
+        {
+          "org.gradle.parallel": "false",
+          "org.gradle.workers.max": "2"
+        }
+      ],
+      [
         "expo-font",
         {
           "fonts": [
             "node_modules/@expo-google-fonts/inter/400Regular/Inter_400Regular.ttf",
             "node_modules/@expo-google-fonts/inter/500Medium/Inter_500Medium.ttf",
             "node_modules/@expo-google-fonts/inter/700Bold/Inter_700Bold.ttf",
+            "node_modules/@expo-google-fonts/poppins/400Regular/Poppins_400Regular.ttf",
+            "node_modules/@expo-google-fonts/poppins/500Medium/Poppins_500Medium.ttf",
             "node_modules/@expo-google-fonts/poppins/600SemiBold/Poppins_600SemiBold.ttf",
-            "node_modules/@expo-google-fonts/poppins/700Bold/Poppins_700Bold.ttf"
+            "node_modules/@expo-google-fonts/poppins/700Bold/Poppins_700Bold.ttf",
+            "node_modules/@expo-google-fonts/montserrat/600SemiBold/Montserrat_600SemiBold.ttf",
+            "node_modules/@expo-google-fonts/montserrat/700Bold/Montserrat_700Bold.ttf",
+            "node_modules/@expo-google-fonts/open-sans/400Regular/OpenSans_400Regular.ttf",
+            "node_modules/@expo-google-fonts/open-sans/600SemiBold/OpenSans_600SemiBold.ttf",
+            "node_modules/@expo-google-fonts/open-sans/700Bold/OpenSans_700Bold.ttf",
+            "node_modules/@expo-google-fonts/roboto/400Regular/Roboto_400Regular.ttf",
+            "node_modules/@expo-google-fonts/roboto/500Medium/Roboto_500Medium.ttf",
+            "node_modules/@expo-google-fonts/roboto/700Bold/Roboto_700Bold.ttf",
+            "node_modules/@expo-google-fonts/lora/600SemiBold/Lora_600SemiBold.ttf",
+            "node_modules/@expo-google-fonts/lora/700Bold/Lora_700Bold.ttf"
           ]
         }
       ],
       [
-        "./plugins/withPropiedadesGradle",
+        "expo-navigation-bar",
         {
-          "org.gradle.parallel": "false",
-          "org.gradle.workers.max": "2"
+          "enforceContrast": false
         }
       ]
     ],

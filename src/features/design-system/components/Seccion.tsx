@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, type DimensionValue } from 'react-native';
 
+import { useBreakpoint } from '@/shared/hooks';
 import { Text } from '@/shared/ui/atoms';
 import { useTheme, type Theme } from '@/theme';
 
@@ -13,10 +14,15 @@ type SeccionProps = {
 /** Bloque del catalogo: un titulo y lo que se este mostrando debajo. */
 export function Seccion({ titulo, descripcion, children }: SeccionProps) {
   const theme = useTheme();
+  const { elegir } = useBreakpoint();
   const styles = createStyles(theme);
 
+  // Una columna en telefono; dos cuando hay lugar. Asi el catalogo aprovecha
+  // el ancho en vez de ser una tira larguisima.
+  const anchoSeccion = elegir<DimensionValue>({ sm: '100%', lg: '48%' });
+
   return (
-    <View style={styles.seccion}>
+    <View style={[styles.seccion, { width: anchoSeccion }]}>
       <View style={styles.encabezado}>
         <Text variant="title" weight="bold" accessibilityRole="header">
           {titulo}

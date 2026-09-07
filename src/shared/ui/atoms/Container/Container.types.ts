@@ -7,13 +7,11 @@ export interface ContainerProps {
   children: ReactNode;
   /**
    * Que tipo de contenido lleva adentro. De eso sale el ancho maximo:
-   * - `formulario` → una columna angosta (login, alta de factura)
-   * - `contenido`  → texto y fichas
-   * - `ancho`      → listados y dashboards, que si aprovechan la pantalla
-   * - `completo`   → sin limite
+   * - `formulario` → tope 440. Un input de 1300px no se puede leer.
+   * - `contenido`  → tope 760. Ancho comodo para texto y fichas.
+   * - `ancho`      → listados, tablas y dashboards: usan el 90% real.
+   * - `completo`   → de borde a borde, sin margenes.
    */
   ancho?: MaxWidth;
-  /** Padding horizontal que crece con la ventana. */
-  conPadding?: boolean;
   style?: StyleProp<ViewStyle>;
 }

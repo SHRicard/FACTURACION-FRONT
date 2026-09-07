@@ -1,7 +1,7 @@
-import { Button } from '@/shared/ui/atoms';
+import { Button, CampoControlado } from '@/shared/ui/atoms';
 
-import { AuthLayout, CampoControlado, EnlaceAuth } from '../components';
-import { useLogin } from '../hooks';
+import { AuthLayout, BotonGoogle, EnlaceAuth } from '../components';
+import { useLogin, useLoginGoogle } from '../hooks';
 
 /**
  * Pantalla de inicio de sesion.
@@ -9,6 +9,7 @@ import { useLogin } from '../hooks';
  */
 export function LoginScreen() {
   const { form, enviar, cargando, error } = useLogin();
+  const google = useLoginGoogle();
 
   return (
     <AuthLayout
@@ -49,7 +50,23 @@ export function LoginScreen() {
         onSubmitEditing={enviar}
       />
 
-      <Button label="Ingresar" onPress={enviar} loading={cargando} fullWidth size="lg" />
+      <Button
+        label="Ingresar"
+        onPress={enviar}
+        loading={cargando}
+        disabled={google.cargando}
+        fullWidth
+        size="lg"
+      />
+
+      {google.disponible ? (
+        <BotonGoogle
+          onPress={google.entrar}
+          cargando={google.cargando}
+          deshabilitado={cargando}
+          error={google.error}
+        />
+      ) : null}
     </AuthLayout>
   );
 }

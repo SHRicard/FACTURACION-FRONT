@@ -18,10 +18,16 @@ export const createStyles = (theme: Theme) =>
       justifyContent: 'center',
       gap: theme.spacing.sm,
     },
+    // En `sm` el gap de `md` separa demasiado el icono del texto para lo chico
+    // que es el boton.
+    smContent: { gap: theme.spacing.xs },
     fullWidth: { alignSelf: 'stretch' },
 
     // tamanos
-    sm: { minHeight: 44, paddingHorizontal: theme.spacing.md },
+    // `sm` es la accion secundaria (el "Editar" del encabezado): tiene que
+    // leerse como accesorio, no competir con el boton principal. Queda por
+    // debajo de los 44px de touch target, que el `hitSlop` del Pressable repone.
+    sm: { minHeight: 36, paddingHorizontal: theme.spacing.md },
     md: { minHeight: 48, paddingHorizontal: theme.spacing.lg },
     lg: { minHeight: 56, paddingHorizontal: theme.spacing.xl },
 

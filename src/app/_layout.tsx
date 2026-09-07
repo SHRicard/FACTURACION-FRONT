@@ -5,9 +5,12 @@ import {
   ThemeProvider as NavigationThemeProvider,
   type Theme as NavigationTheme,
 } from 'expo-router';
+import { NavigationBar } from 'expo-navigation-bar';
 import { StatusBar } from 'expo-status-bar';
-import { useMemo } from 'react';
+import * as SystemUI from 'expo-system-ui';
+import { useEffect, useMemo } from 'react';
 
+import { ArranqueSesion } from '@/features/auth/components';
 import { BotonDesignSystem } from '@/features/design-system/components';
 import { AppProviders } from '@/providers';
 import { useTheme, useThemeMode } from '@/theme';
@@ -46,6 +49,19 @@ function RootNavigator() {
 
   // El chrome del navegador (headers, fondos, transiciones) toma los mismos
   // tokens semanticos que el resto de la app: cero colores hardcodeados.
+  /**
+   * Pinta el fondo del ROOT VIEW nativo con el color del theme.
+   *
+   * Sin esto, al pasar a modo oscuro la app queda negra pero la franja de la
+   * barra de navegacion del celular sigue blanca: esa zona no la dibuja React,
+   * la dibuja Android con el fondo de la ventana, que es blanco por defecto.
+   * La barra en si ya es transparente (`navigationBarColor` en styles.xml), asi
+   * que alcanza con pintar lo que hay detras.
+   */
+  useEffect(() => {
+    SystemUI.setBackgroundColorAsync(theme.colors.background).catch(() => {});
+  }, [theme.colors.background]);
+
   const navigationTheme = useMemo<NavigationTheme>(() => {
     const base = colorScheme === 'dark' ? DarkTheme : DefaultTheme;
     return {
@@ -65,7 +81,18 @@ function RootNavigator() {
   return (
     <NavigationThemeProvider value={navigationTheme}>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false }} />
+      {/*
+        Color de los BOTONES de la barra de navegacion de Android.
+        Ojo con el nombre: `dark` significa "barra oscura con contenido claro",
+        asi que en modo oscuro va `dark`. No se usa `auto` a proposito: `auto`
+        sigue el esquema del SISTEMA, y si el usuario forzo un modo distinto
+        dentro de la app quedarian botones invisibles.
+      */}
+      <NavigationBar style={colorScheme === 'dark' ? 'dark' : 'light'} />
+      {/* Nada se navega hasta saber si la sesion guardada sigue valiendo. */}
+      <ArranqueSesion>
+        <Stack screenOptions={{ headerShown: false }} />
+      </ArranqueSesion>
       {/* Flota por encima de toda la app. Solo en __DEV__. */}
       <BotonDesignSystem />
     </NavigationThemeProvider>

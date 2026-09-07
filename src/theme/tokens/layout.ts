@@ -31,13 +31,40 @@ export const maxWidth = {
   formulario: 440,
   /** Texto corrido, fichas, detalle. */
   contenido: 760,
-  /** Listados, tablas y dashboards, que si aprovechan el ancho. */
-  ancho: 1128,
+  /**
+   * Listados, tablas y dashboards. El techo es alto a proposito: en una pantalla
+   * normal gana el 90% (`anchoUtil`) y este limite solo entra a jugar en un
+   * monitor ultrawide, para que el contenido no quede desparramado.
+   */
+  ancho: 1600,
   /** Sin limite: ocupa todo lo disponible. */
   completo: 100000,
 } as const;
 
-export const layout = { breakpoints, maxWidth } as const;
+/**
+ * Porcentaje del ancho de pantalla que ocupa el contenido.
+ *
+ * El 10% restante son los margenes laterales. Es lo que hace que la app se vea
+ * "llena" en un monitor en vez de una columna angosta en el medio, sin dejar el
+ * contenido pegado a los bordes.
+ */
+export const anchoUtil = '90%';
+
+/**
+ * Alto BASE de la barra de tabs, SIN contar el area segura de abajo.
+ *
+ * Se fija a mano (en vez de dejar el default del navegador) porque no lo usa
+ * solo la barra: cualquier cosa que flote justo encima —hoy la hoja del tour—
+ * necesita el mismo numero para no quedar tapada. Con el default habria que
+ * medirlo, y una medicion que llega un frame tarde se ve como un salto.
+ *
+ * De aca sale el alto de cada estilo de barra (ver `tokens/tabs.ts`). Lo que
+ * ocupa la barra de verdad en pantalla lo calcula `espacioDeBarra`, que ademas
+ * suma los margenes del estilo elegido y el area segura.
+ */
+export const alturaBarraTabs = 60;
+
+export const layout = { breakpoints, maxWidth, anchoUtil, alturaBarraTabs } as const;
 
 export type Breakpoint = keyof typeof breakpoints;
 export type MaxWidth = keyof typeof maxWidth;

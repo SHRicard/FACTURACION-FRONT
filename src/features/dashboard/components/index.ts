@@ -1,0 +1,1 @@
+export { TarjetaResumen } from './TarjetaResumen';

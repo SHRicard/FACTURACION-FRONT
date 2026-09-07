@@ -1,10 +1,10 @@
 import { MailCheck } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
-import { Button, Text } from '@/shared/ui/atoms';
+import { Button, CampoControlado, Text } from '@/shared/ui/atoms';
 import { useTheme, type Theme } from '@/theme';
 
-import { AuthLayout, CampoControlado, EnlaceAuth } from '../components';
+import { AuthLayout, EnlaceAuth } from '../components';
 import { useRecuperarPassword } from '../hooks';
 
 /**

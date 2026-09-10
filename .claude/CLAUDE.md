@@ -34,6 +34,9 @@ src/
 │   └── <feature>/
 │       ├── components/      # 🧩 Composiciones SOLO de esta feature
 │       ├── screens/         # Pantallas de la feature
+│       │   ├── XScreen.tsx  #   Índice: elige la vista según el ancho (useEsEscritorio)
+│       │   ├── movil/       #   📱 Vista de teléfono: lo que se desarrolla hoy
+│       │   └── escritorio/  #   🖥️ Vista de escritorio (ver "Móvil y escritorio")
 │       ├── hooks/           # Hooks de la feature
 │       ├── api/             # Endpoints RTK Query (injectEndpoints)
 │       ├── store/           # Slice de Redux (estado de cliente)
@@ -152,6 +155,69 @@ features/<x>/components/ → lo que usa UNA sola feature
 
 ---
 
+## 📱 Móvil y escritorio
+
+Lo que se está desarrollando hoy es **la vista móvil**. La de escritorio va a ser una composición **completamente distinta** —sidebar en vez de tabs, tablas en vez de tarjetas, ficha al lado de la lista en vez de una pantalla nueva—, no la misma estirada. Está para el final del proyecto.
+
+### La regla
+
+**El corte lo decide el ANCHO DE VENTANA, nunca `Platform.OS`.**
+
+Una tablet nativa en horizontal es escritorio; un celular abierto en el navegador es móvil. Partir por plataforma se equivoca en los dos casos, y los dos pasan de verdad en un negocio que factura desde el mostrador. `Platform` queda para lo que sí es de la plataforma: teclado, fuentes y storage.
+
+El umbral es **uno solo para toda la app**: `breakpointEscritorio` (`lg`, 905px) en `theme/tokens/layout.ts`. Se pregunta con **`useEsEscritorio()`**.
+
+### Las tres herramientas, en orden
+
+1. **`Container ancho="formulario" | "contenido" | "ancho"`** — el tope de ancho. Un formulario con tope 440 ya se ve bien en un monitor sin tocar nada.
+2. **`useBreakpoint().elegir({ sm, md, lg, xl })`** — para **números**: columnas, anchos, paddings. Ver `DashboardScreen`.
+3. **`useEsEscritorio()`** — para **composiciones distintas**. Es la última opción, porque duplica presentación.
+
+### Cuándo bifurcar (usar la 3)
+
+Solo si cambia el **árbol**, no si cambian los **números**. Tres preguntas; si las tres dan "no", no se bifurca:
+
+1. ¿Cambia **qué** componentes hay? (tarjeta → fila de tabla)
+2. ¿Cambia el **anidado**? (dos pantallas → dos paneles lado a lado)
+3. ¿Cambia la **interacción**? (tap → hover y selección; tirar para abajo → botón de refrescar)
+
+Si solo cambian anchos, columnas o espaciados → herramientas 1 y 2, cero archivos nuevos.
+
+### Qué se comparte y qué se duplica
+
+- **Siempre compartido, nunca se duplica:** `api/`, `hooks/`, `schemas.ts`, `types.ts`, `store/`, `navegar.ts`, `shared/utils/`, el theme y los atoms de contenido (`Text`, `Button`, `Input`, `Badge`, `Modal`, `EstadoVacio`). Si el escritorio necesita otros datos, es un **hook nuevo en la misma carpeta**, no una copia de la feature.
+- **Compartido hasta que no alcance:** `components/` de la feature. El día que la vista de escritorio necesita otra pieza, la nueva va a `components/escritorio/`.
+- **Móvil-first, van a necesitar hermano:** `Pantalla` (asume barra de tabs abajo y flecha de volver, dos cosas que en escritorio no existen) y las screens que cumplan el criterio de arriba.
+
+### La forma de una feature bifurcada
+
+```
+screens/
+├── index.ts                     # el barril NO cambia: sigue exportando XScreen
+├── ClientesScreen.tsx           # el índice condicional: solo elige, 3 líneas
+├── movil/ClientesMovil.tsx      # lo que hay hoy
+└── escritorio/ClientesEscritorio.tsx
+```
+
+El índice es literalmente esto, y no hace nada más:
+
+```tsx
+export function ClientesScreen() {
+  return useEsEscritorio() ? <ClientesEscritorio /> : <ClientesMovil />;
+}
+```
+
+> Las 11 pantallas del área de administrador ya están con esta forma, con la de escritorio en `EnConstruccion`. Las de **auth** y el **design system** quedaron sin bifurcar a propósito: un formulario centrado y un catálogo de dos columnas ya funcionan en las dos, y poner un cartel de "en construcción" en el login dejaría la app sin poder entrarse desde una ventana ancha.
+
+### Cuando llegue el escritorio
+
+- La navegación **no se bifurca por archivo**: `expo-router/ui` trae tabs headless (`Tabs`, `TabSlot`, `TabList`, `TabTrigger`) y el mismo navegador dibuja el `TabList` abajo en móvil o a la izquierda en escritorio.
+- ⚠️ Un navegador (`<Stack>`, `<Tabs>`) tiene que quedar **siempre en la misma posición del árbol de React**. Si cambia de padre al cruzar el umbral, React lo desmonta y se pierde el historial.
+- `app.json` tiene `web.output: "static"`: durante el prerender no hay DOM y el ancho de ventana llega en `0`, así que el HTML estático sale siempre con la vista móvil y el cliente la reemplaza al hidratar. Cuando el escritorio sea real, pasarlo a `"single"` — es una app detrás de un login, no hay SEO que perder.
+- `app.json` tiene `orientation: "portrait"`, así que hoy ningún teléfono nativo llega a 905px. El umbral solo lo cruzan tablets y el navegador.
+
+---
+
 ## 🗄️ Storage local
 
 - **MMKV** (`react-native-mmkv`) — síncrono, rápido.
@@ -237,3 +303,4 @@ eas build --platform android --profile production
 12. **Antes de instalar una librería nueva**, avisá y explicá por qué, y confirmá si necesita development build (código nativo) o corre en Expo Go.
 13. Mensajes de commit con convención: `feat:`, `fix:`, `chore:`, `refactor:`.
 14. Si una tarea puede **romper algo**, explicá el cambio y esperá confirmación antes de aplicarlo.
+15. **Lo que se desarrolla hoy es la vista MÓVIL.** Todo cambio de pantalla va en `screens/movil/`; la de escritorio queda en `EnConstruccion` hasta su etapa. El corte lo decide el ancho con `useEsEscritorio()`, **nunca** `Platform.OS`. Antes de bifurcar una pantalla nueva, fijate si no alcanza con `Container` + `elegir()` (ver "📱 Móvil y escritorio").

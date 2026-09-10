@@ -56,7 +56,7 @@ const baseQuery: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> =
  *
  * ⚠️ Al agregar un endpoint nuevo con su tag, sumalo ACA.
  */
-export const TAGS_API = ['Usuario', 'Cliente'] as const;
+export const TAGS_API = ['Usuario', 'Cliente', 'Especie', 'Ticket', 'Factura'] as const;
 
 /**
  * Base de RTK Query para toda la app. Las features NO crean su propia `createApi`:

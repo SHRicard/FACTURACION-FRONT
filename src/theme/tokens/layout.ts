@@ -5,6 +5,11 @@
  * horizontal, una tablet y una ventana de navegador angosta pueden caer todos en
  * el mismo breakpoint. Por eso en toda la app se decide por ancho y NUNCA con
  * `Platform.OS === 'web'`: si no, cada layout hay que arreglarlo dos veces.
+ *
+ * Eso vale tambien para la vista de escritorio, que algun dia va a ser una
+ * composicion distinta y no un reflow: el corte lo marca `breakpointEscritorio`,
+ * no la plataforma. Una tablet nativa en horizontal es escritorio, y un celular
+ * abierto en el navegador es movil.
  */
 
 /** Ancho MINIMO (en dp/px) a partir del cual aplica cada breakpoint. */
@@ -64,7 +69,25 @@ export const anchoUtil = '90%';
  */
 export const alturaBarraTabs = 60;
 
-export const layout = { breakpoints, maxWidth, anchoUtil, alturaBarraTabs } as const;
+/**
+ * A partir de este breakpoint la app usa la vista de ESCRITORIO.
+ *
+ * `lg` (905px) es "tablet en horizontal, laptop": el ancho donde entra un
+ * sidebar mas una lista mas un detalle sin que ninguno quede espichado.
+ *
+ * Es un token y no un `'lg'` suelto adentro de un hook porque mover el umbral
+ * tiene que ser cambiar un valor en un lugar, no ir a buscar comparaciones
+ * desparramadas por el codigo. Lo lee `useEsEscritorio`.
+ */
+export const breakpointEscritorio: Breakpoint = 'lg';
+
+export const layout = {
+  breakpoints,
+  maxWidth,
+  anchoUtil,
+  alturaBarraTabs,
+  breakpointEscritorio,
+} as const;
 
 export type Breakpoint = keyof typeof breakpoints;
 export type MaxWidth = keyof typeof maxWidth;

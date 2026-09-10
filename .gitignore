@@ -97,3 +97,6 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 *.orig.*
+
+# Instrucciones de Claude Code: son locales de cada desarrollador, no del repo.
+CLAUDE.md

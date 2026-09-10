@@ -1,88 +1,15 @@
-import { useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { useEsEscritorio } from '@/shared/hooks';
 
-import {
-  Pantalla,
-  SelectorEstiloCabecera,
-  SelectorEstiloTabs,
-  SelectorModo,
-  SelectorTipografia,
-  Text,
-} from '@/shared/ui/atoms';
-import { useTheme, type Theme } from '@/theme';
+import { ConfiguracionEscritorio } from './escritorio/ConfiguracionEscritorio';
+import { ConfiguracionMovil } from './movil/ConfiguracionMovil';
 
 /**
- * Ajustes de la app. Todo lo de aca se guarda en el storage local: son
- * preferencias del dispositivo, no datos de la cuenta.
+ * Elige que composicion se dibuja. No hace nada mas: los datos viven en los
+ * hooks de la feature y los comparten las dos vistas.
+ *
+ * Corta por ANCHO de ventana, no por plataforma: una tablet en horizontal es
+ * escritorio, un celular en el navegador es movil. Ver `useEsEscritorio`.
  */
 export function ConfiguracionScreen() {
-  const router = useRouter();
-  const theme = useTheme();
-  const styles = createStyles(theme);
-
-  return (
-    <Pantalla
-      titulo="Configuracion"
-      ancho="contenido"
-      onVolver={() => router.back()}
-      labelVolver="Mas"
-    >
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        <View style={styles.bloque}>
-          <View style={styles.encabezado}>
-            <Text variant="title" weight="bold" accessibilityRole="header">
-              Apariencia
-            </Text>
-            <Text variant="caption" tone="muted">
-              Como se ve la app en este dispositivo.
-            </Text>
-          </View>
-          <SelectorModo />
-        </View>
-
-        <View style={styles.bloque}>
-          <View style={styles.encabezado}>
-            <Text variant="title" weight="bold" accessibilityRole="header">
-              Tipografia
-            </Text>
-            <Text variant="caption" tone="muted">
-              Cada opcion se muestra con su propia fuente.
-            </Text>
-          </View>
-          <SelectorTipografia />
-        </View>
-
-        <View style={styles.bloque}>
-          <View style={styles.encabezado}>
-            <Text variant="title" weight="bold" accessibilityRole="header">
-              Barra de tabs
-            </Text>
-            <Text variant="caption" tone="muted">
-              La barra de abajo cambia al instante.
-            </Text>
-          </View>
-          <SelectorEstiloTabs />
-        </View>
-
-        <View style={styles.bloque}>
-          <View style={styles.encabezado}>
-            <Text variant="title" weight="bold" accessibilityRole="header">
-              Cabecera
-            </Text>
-            <Text variant="caption" tone="muted">
-              Como se ve el titulo al entrar al detalle de algo.
-            </Text>
-          </View>
-          <SelectorEstiloCabecera />
-        </View>
-      </ScrollView>
-    </Pantalla>
-  );
+  return useEsEscritorio() ? <ConfiguracionEscritorio /> : <ConfiguracionMovil />;
 }
-
-const createStyles = (theme: Theme) =>
-  StyleSheet.create({
-    scroll: { gap: theme.spacing.xl, paddingBottom: theme.spacing.xl },
-    bloque: { gap: theme.spacing.md },
-    encabezado: { gap: theme.spacing.xs },
-  });

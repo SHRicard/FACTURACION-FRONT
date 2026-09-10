@@ -11,6 +11,8 @@ export type { ButtonProps, ButtonSize, ButtonVariant } from './Button';
 export { CampoControlado } from './CampoControlado';
 export { Container } from './Container';
 export type { ContainerProps } from './Container';
+export { EnConstruccion } from './EnConstruccion';
+export type { EnConstruccionProps } from './EnConstruccion';
 export { EstadoVacio } from './EstadoVacio';
 export type { EstadoVacioProps } from './EstadoVacio';
 export { Input } from './Input';

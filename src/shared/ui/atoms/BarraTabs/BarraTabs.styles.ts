@@ -33,12 +33,13 @@ export const createStyles = (theme: Theme, estilo: EstiloTabs, insetInferior: nu
         : { borderTopWidth: StyleSheet.hairlineWidth }),
     },
     // La sombra solo tiene sentido cuando la barra esta despegada del piso.
+    //
+    // ⚠️ `boxShadow` y NO `elevation`: en Android la sombra de `elevation`
+    // salia RECTANGULAR detras de la capsula, con las esquinas asomando por
+    // abajo (verificado en un Moto G32, Android 13). `boxShadow` dibuja la
+    // sombra con el mismo radio que la vista, y es la misma en iOS y en web.
     flotando: {
-      elevation: 8,
-      shadowColor: '#000',
-      shadowOpacity: 0.16,
-      shadowRadius: 12,
-      shadowOffset: { width: 0, height: 4 },
+      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.16)',
     },
     tab: {
       flex: 1,
@@ -68,10 +69,7 @@ export const createStyles = (theme: Theme, estilo: EstiloTabs, insetInferior: nu
       // la burbuja, para que se lea montada y no pegada.
       borderWidth: 4,
       borderColor: theme.colors.background,
-      elevation: 8,
-      shadowColor: '#000',
-      shadowOpacity: 0.22,
-      shadowRadius: 8,
-      shadowOffset: { width: 0, height: 3 },
+      // `boxShadow` por lo mismo que la capsula: sigue el redondeo en Android.
+      boxShadow: '0 3px 8px rgba(0, 0, 0, 0.22)',
     },
   });

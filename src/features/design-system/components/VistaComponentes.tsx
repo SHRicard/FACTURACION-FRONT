@@ -2,7 +2,7 @@ import { Pencil, Plus, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { useBreakpoint } from '@/shared/hooks';
+import { useBreakpoint, useEsEscritorio } from '@/shared/hooks';
 import {
   Badge,
   BarraVolver,
@@ -32,6 +32,7 @@ const TONOS_BADGE: BadgeTone[] = ['neutral', 'primary', 'success', 'error', 'war
 export function VistaComponentes() {
   const theme = useTheme();
   const { breakpoint, ancho } = useBreakpoint();
+  const esEscritorio = useEsEscritorio();
   const styles = createStyles(theme);
 
   const [texto, setTexto] = useState('');
@@ -251,6 +252,17 @@ export function VistaComponentes() {
             <Badge label={`breakpoint: ${breakpoint}`} tone="primary" />
             <Badge label={`${Math.round(ancho)} px`} tone="neutral" />
           </View>
+        </Muestra>
+
+        {/* La unica prueba de vida del corte movil/escritorio mientras el
+            escritorio este en construccion: se achica la ventana y cambia. */}
+        <Muestra
+          codigo={`useEsEscritorio() → desde ${theme.layout.breakpointEscritorio} (${theme.layout.breakpoints[theme.layout.breakpointEscritorio]}px)`}
+        >
+          <Badge
+            label={esEscritorio ? 'vista: escritorio' : 'vista: movil'}
+            tone={esEscritorio ? 'success' : 'primary'}
+          />
         </Muestra>
 
         {Object.entries(theme.layout.breakpoints).map(([nombre, minimo]) => (

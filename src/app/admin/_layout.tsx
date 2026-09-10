@@ -63,6 +63,15 @@ export default function AdminLayout() {
           tabBar={dibujarBarra}
           screenOptions={{
             headerShown: false,
+            /*
+             * Al salir de un tab, su stack vuelve al principio. Sin esto, entrar
+             * a la ficha de un cliente y cambiar de tab deja esa ficha abierta:
+             * al volver a Clientes aparece un cliente en vez de la lista, y la
+             * flecha de atras tiene que desandar un camino que ya no se ve.
+             *
+             * Un tab es un lugar al que se va, no una pantalla que se recuerda.
+             */
+            popToTopOnBlur: true,
             // El alto se fija a mano (sale del estilo elegido) porque no lo usa
             // solo la barra: la hoja del tour se apoya justo encima y necesita
             // el mismo numero. Ver `espacioDeBarra`.

@@ -1,10 +1,9 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 
-import { interpretarError } from '@/shared/utils';
+import { interpretarError, volverDelFormulario } from '@/shared/utils';
 
 import { useAnularTicketMutation } from '../api/ticketsApi';
-import { volverDelFormulario } from '../navegar';
 
 /**
  * Anular un ticket: baja logica con motivo opcional.

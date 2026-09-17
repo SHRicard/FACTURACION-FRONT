@@ -115,7 +115,8 @@ const createStyles = (theme: Theme) =>
       borderRadius: theme.radius.md,
       borderWidth: 1,
       borderColor: theme.colors.border,
-      backgroundColor: theme.colors.background,
+      // El mismo fondo que los `Input` de al lado: se dibuja como un campo mas.
+      backgroundColor: theme.colors.surface,
     },
     cajaError: { borderColor: theme.colors.error },
     presionada: { opacity: 0.7 },

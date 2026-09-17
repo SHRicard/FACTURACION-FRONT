@@ -3,7 +3,13 @@ import { memo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Badge, Text } from '@/shared/ui/atoms';
-import { formatearMoneda, textoVencimiento, tonoEstadoFactura } from '@/shared/utils';
+import {
+  chipCumplimiento,
+  formatearFechaCorta,
+  formatearMoneda,
+  textoVencimiento,
+  tonoEstadoFactura,
+} from '@/shared/utils';
 import { useTheme, type Theme } from '@/theme';
 
 import type { FacturaEnLista } from '../types';
@@ -24,14 +30,21 @@ function FilaFacturaComponent({ factura, onPress }: FilaFacturaProps) {
   const styles = createStyles(theme);
 
   /*
-   * El numero se asigna al CERRAR, no al abrir: una abierta no tiene. Por eso
-   * se chequea con `if` y no se muestra "N° undefined".
+   * El numero se asigna al SALDARLA, no al abrir: la factura en curso no tiene.
+   * Por eso se chequea con `if` y no se muestra "N° undefined".
    */
-  const periodo = factura.numero
+  const etiqueta = factura.numero
     ? `N° ${String(factura.numero).padStart(4, '0')}`
-    : 'Período en curso';
+    : 'Factura en curso';
 
   const tickets = factura.cantidadTickets === 1 ? '1 ticket' : `${factura.cantidadTickets} tickets`;
+
+  // Una saldada ya no corre plazo: se dice cuando se termino de pagar.
+  const saldadaEl = factura.estado === 'pagada' ? formatearFechaCorta(factura.pagadaEl) : null;
+  const plazo = saldadaEl ? `saldada el ${saldadaEl}` : textoVencimiento(factura.diasParaVencer);
+
+  // Que tan bien pago. Solo en la saldada y en la vencida: ver `chipCumplimiento`.
+  const cumplimiento = chipCumplimiento(factura);
 
   return (
     <Pressable
@@ -42,7 +55,14 @@ function FilaFacturaComponent({ factura, onPress }: FilaFacturaProps) {
         pressed && styles.presionada,
       ]}
       accessibilityRole="button"
-      accessibilityLabel={`${factura.cliente.nombre}, ${factura.estadoVisible}, saldo ${formatearMoneda(factura.saldo)}`}
+      accessibilityLabel={[
+        factura.cliente.nombre,
+        factura.estadoVisible,
+        `saldo ${formatearMoneda(factura.saldo)}`,
+        cumplimiento?.label,
+      ]
+        .filter(Boolean)
+        .join(', ')}
     >
       <View style={styles.datos}>
         <View style={styles.encabezado}>
@@ -59,8 +79,14 @@ function FilaFacturaComponent({ factura, onPress }: FilaFacturaProps) {
         </Text>
 
         <Text variant="caption" tone={factura.vencida ? 'error' : 'muted'} numberOfLines={1}>
-          {periodo} · {tickets} · {textoVencimiento(factura.diasParaVencer)}
+          {etiqueta} · {tickets} · {plazo}
         </Text>
+
+        {cumplimiento ? (
+          <View style={styles.chip}>
+            <Badge label={cumplimiento.label} tone={cumplimiento.tone} />
+          </View>
+        ) : null}
       </View>
 
       <View style={styles.montos}>
@@ -104,5 +130,7 @@ const createStyles = (theme: Theme) =>
     datos: { flex: 1, gap: 2 },
     encabezado: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
     nombre: { flexShrink: 1 },
+    // Sin esto el chip se estira a todo el ancho de la columna.
+    chip: { alignSelf: 'flex-start', marginTop: theme.spacing.xs },
     montos: { alignItems: 'flex-end' },
   });

@@ -1,6 +1,6 @@
 import { Button, CampoControlado } from '@/shared/ui/atoms';
 
-import { AuthLayout, BotonGoogle, EnlaceAuth } from '../components';
+import { AuthLayout, BotonGoogle, ConsentimientoGoogle, EnlaceAuth } from '../components';
 import { useLogin, useLoginGoogle } from '../hooks';
 
 /**
@@ -60,12 +60,28 @@ export function LoginScreen() {
       />
 
       {google.disponible ? (
-        <BotonGoogle
-          onPress={google.entrar}
-          cargando={google.cargando}
-          deshabilitado={cargando}
-          error={google.error}
-        />
+        <>
+          <BotonGoogle
+            onPress={google.entrar}
+            cargando={google.cargando}
+            deshabilitado={cargando}
+            error={google.error}
+          />
+          {/*
+            Entrar con Google tambien crea la cuenta si no existe, y eso no
+            puede pasar sin consentimiento. Quien ya tiene cuenta entra derecho
+            y nunca ve este dialogo.
+          */}
+          <ConsentimientoGoogle
+            visible={google.consentimiento.visible}
+            valor={google.consentimiento.acepto}
+            onCambiar={google.consentimiento.cambiar}
+            onAceptar={google.consentimiento.confirmar}
+            onCancelar={google.consentimiento.cancelar}
+            cargando={google.consentimiento.cargando}
+            error={google.consentimiento.error}
+          />
+        </>
       ) : null}
     </AuthLayout>
   );

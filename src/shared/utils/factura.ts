@@ -13,7 +13,6 @@ import type { BadgeTone } from '@/shared/ui/atoms';
 const TONO_POR_ESTADO: Record<string, BadgeTone> = {
   abierta: 'primary',
   vencida: 'error',
-  cerrada: 'warning',
   'sin deuda': 'success',
   pagada: 'success',
   anulada: 'neutral',
@@ -35,4 +34,59 @@ export function textoVencimiento(diasParaVencer: number): string {
   if (diasParaVencer === 0) return 'Vence hoy';
   if (diasParaVencer === 1) return 'Vence manana';
   return `Vence en ${diasParaVencer} dias`;
+}
+
+// ─────────────────── Cumplimiento ───────────────────
+
+const UN_DECIMAL = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 1 });
+
+/**
+ * `90` -> `90%`, `67.5` -> `67,5%`. `null` -> `—`: sin nada fiado no hay que
+ * medir, y un `0%` se leeria como "no pago nada".
+ */
+export function formatearCumplimiento(valor: number | null | undefined): string {
+  return valor == null ? '—' : `${UN_DECIMAL.format(valor)}%`;
+}
+
+/** El color del cumplimiento: 90 o mas verde, de 60 a 89 ambar, menos rojo. */
+export function tonoCumplimiento(valor: number | null | undefined): BadgeTone {
+  if (valor == null) return 'neutral';
+  if (valor >= 90) return 'success';
+  if (valor >= 60) return 'warning';
+  return 'error';
+}
+
+interface FacturaConCumplimiento {
+  estado: string;
+  vencida?: boolean;
+  cumplimiento?: number | null;
+}
+
+/**
+ * El chip de cumplimiento de una factura, o null si no corresponde mostrarlo.
+ *
+ * Solo se juzga la saldada (queda fijo) y la vencida (va cambiando con cada
+ * pago). Una abierta que todavia no vencio trae 0 porque no pago nada, pero
+ * esta a tiempo: mostrarle "0%" seria acusarla de algo que no hizo.
+ *
+ * Vive en `shared` porque lo usan el listado, el detalle y el comprobante del
+ * pago, que son de features distintas.
+ */
+export function chipCumplimiento(
+  factura: FacturaConCumplimiento,
+): { label: string; tone: BadgeTone } | null {
+  if (factura.cumplimiento == null) return null;
+  if (factura.estado === 'pagada') {
+    return {
+      label: `${formatearCumplimiento(factura.cumplimiento)} de cumplimiento`,
+      tone: tonoCumplimiento(factura.cumplimiento),
+    };
+  }
+  if (factura.vencida) {
+    return {
+      label: `Cumplimiento: va ${formatearCumplimiento(factura.cumplimiento)}`,
+      tone: tonoCumplimiento(factura.cumplimiento),
+    };
+  }
+  return null;
 }

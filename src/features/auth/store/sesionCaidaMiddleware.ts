@@ -3,9 +3,18 @@ import { isRejectedWithValue, type Middleware } from '@reduxjs/toolkit';
 import { SecureStorageKeys, secureStorageService } from '@/services/storage';
 
 import { ENDPOINTS_PUBLICOS } from '../api/authApi';
-import { sesionCerrada } from './authSlice';
+import { pendienteSchema } from '../schemas';
+import type { Pendiente } from '../types';
+import { pendienteActualizado, sesionCerrada } from './authSlice';
 
 const publicos = new Set<string>(ENDPOINTS_PUBLICOS);
+
+/** El `detalles.pendiente` de un 403 del negocio, o null si no vino. */
+function pendienteDelError(payload: unknown): Pendiente {
+  const data = (payload as { data?: { detalles?: { pendiente?: unknown } } } | undefined)?.data;
+  const leido = pendienteSchema.safeParse(data?.detalles?.pendiente ?? null);
+  return leido.success ? leido.data : null;
+}
 
 /**
  * Cierra la sesion cuando el backend deja de aceptar el token.
@@ -29,6 +38,18 @@ export const sesionCaidaMiddleware: Middleware = (store) => (next) => (accion) =
       // El storage se limpia aca y no en un reducer: los reducers son puros.
       secureStorageService.remove(SecureStorageKeys.AUTH_TOKEN);
       store.dispatch(sesionCerrada());
+    }
+
+    /*
+     * Un 403 con `detalles.pendiente`: la sesion sirve, pero le falta algo
+     * antes de operar. Pasa a mitad de uso: cambio la version de los terminos,
+     * u otro dueno lo saco de la marca. Se atrapa en UN lugar, no en cada
+     * pantalla: al cambiar el pendiente, el porton del area de administrador lo
+     * manda a la pantalla del paso que falta.
+     */
+    if (status === 403) {
+      const pendiente = pendienteDelError(accion.payload);
+      if (pendiente) store.dispatch(pendienteActualizado(pendiente));
     }
   }
 

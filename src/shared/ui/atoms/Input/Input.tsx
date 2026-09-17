@@ -1,6 +1,8 @@
 import { forwardRef, memo, useCallback, useMemo, useState } from 'react';
 import { TextInput, View, type TextInput as TextInputRef } from 'react-native';
 
+import { Text } from '@/shared/ui/atoms/Text';
+import { conPuntos, soloDigitos } from '@/shared/utils';
 import { useTheme } from '@/theme';
 
 import { createStyles } from './Input.styles';
@@ -14,7 +16,18 @@ import type { InputProps } from './Input.types';
  * desde el boton "next" del teclado.
  */
 const InputComponent = forwardRef<TextInputRef, InputProps>(function Input(
-  { hasError = false, disabled = false, leftSlot, rightSlot, onFocus, onBlur, ...rest },
+  {
+    hasError = false,
+    disabled = false,
+    monto = false,
+    leftSlot,
+    rightSlot,
+    onFocus,
+    onBlur,
+    value,
+    onChangeText,
+    ...rest
+  },
   ref,
 ) {
   const theme = useTheme();
@@ -37,6 +50,17 @@ const InputComponent = forwardRef<TextInputRef, InputProps>(function Input(
     [onBlur],
   );
 
+  /*
+   * En un monto, los puntos se agregan al MOSTRAR y se sacan al ESCRIBIR: asi
+   * el formulario y su schema siguen trabajando con digitos (`'2000000'`) y
+   * nadie tiene que acordarse de limpiar puntos antes de mandar a la API.
+   */
+  const valorVisible = monto && value != null ? conPuntos(value) : value;
+  const alCambiar = useCallback(
+    (texto: string) => onChangeText?.(monto ? soloDigitos(texto) : texto),
+    [monto, onChangeText],
+  );
+
   return (
     <View
       style={[
@@ -46,7 +70,14 @@ const InputComponent = forwardRef<TextInputRef, InputProps>(function Input(
         disabled && styles.disabled,
       ]}
     >
-      {leftSlot}
+      {leftSlot ??
+        (monto ? (
+          // El signo adentro del campo evita tener que escribirlo y deja claro
+          // que lo que va ahi es plata, no una cantidad.
+          <Text variant="body" tone="muted">
+            $
+          </Text>
+        ) : null)}
       <TextInput
         ref={ref}
         editable={!disabled}
@@ -55,7 +86,10 @@ const InputComponent = forwardRef<TextInputRef, InputProps>(function Input(
         onFocus={alEnfocar}
         onBlur={alDesenfocar}
         accessibilityState={{ disabled }}
+        keyboardType={monto ? 'number-pad' : undefined}
         {...rest}
+        value={valorVisible}
+        onChangeText={alCambiar}
       />
       {rightSlot}
     </View>

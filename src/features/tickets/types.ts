@@ -32,4 +32,9 @@ export interface TicketNuevo {
   items: ItemNuevo[];
   /** Lo que deja en el momento. 0 = se fia todo. */
   pagado?: number;
+  /**
+   * La fecha acordada, `aaaa-mm-dd`. Solo en el alta, y el backend solo la usa
+   * en el primer ticket de la factura: despues se cambia reprogramando.
+   */
+  venceEl?: string;
 }

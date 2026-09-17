@@ -4,6 +4,7 @@ import type {
   cambiarPasswordSchema,
   casoGoogleSchema,
   loginSchema,
+  pendienteSchema,
   recuperarPasswordSchema,
   proveedorSchema,
   registroSchema,
@@ -13,6 +14,7 @@ import type {
   sesionGoogleSchema,
   sesionSchema,
   tokenResetValidoSchema,
+  usuarioActualSchema,
   usuarioSchema,
 } from './schemas';
 
@@ -27,7 +29,22 @@ export type Rol = z.infer<typeof rolSchema>;
 export type Proveedor = z.infer<typeof proveedorSchema>;
 export type CasoGoogle = z.infer<typeof casoGoogleSchema>;
 export type Usuario = z.infer<typeof usuarioSchema>;
+export type Pendiente = z.infer<typeof pendienteSchema>;
+export type UsuarioActual = z.infer<typeof usuarioActualSchema>;
 export type Sesion = z.infer<typeof sesionSchema>;
 export type SesionGoogle = z.infer<typeof sesionGoogleSchema>;
 export type TokenResetValido = z.infer<typeof tokenResetValidoSchema>;
+
+/**
+ * Lo que manda el front a `/auth/google`. No sale de un schema porque no es una
+ * respuesta ni un formulario: es el argumento de la mutation.
+ *
+ * `aceptoTerminosYCondiciones` sin definir = no se manda el campo. Es distinto
+ * de mandarlo en `false`: el backend solo lo exige cuando tiene que crear la
+ * cuenta, y omitirlo deja entrar a quien ya la tiene sin preguntarle de nuevo.
+ */
+export type DatosGoogle = {
+  idToken: string;
+  aceptoTerminosYCondiciones?: boolean;
+};
 export type RespuestaSimple = z.infer<typeof respuestaSimpleSchema>;

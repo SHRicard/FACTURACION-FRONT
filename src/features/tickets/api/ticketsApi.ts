@@ -13,11 +13,12 @@ import type { RespuestaAnulacion, RespuestaTicket, Ticket, TicketNuevo } from '.
 export const ticketsApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     /**
-     * Carga un ticket en la factura abierta del cliente.
+     * Carga un ticket en la factura activa del cliente, aunque ya este vencida:
+     * se suma a lo que debe.
      *
      * El backend calcula los subtotales y el total, copia el nombre de la
-     * especie adentro de cada item y devuelve la factura al dia. Ojo: esa
-     * factura puede ser una NUEVA (ver `useGuardarTicket`).
+     * especie adentro de cada item y devuelve la factura al dia. Si es el
+     * primer ticket, `venceEl` fija la fecha acordada.
      */
     crearTicket: build.mutation<RespuestaTicket, { clienteId: string; ticket: TicketNuevo }>({
       query: ({ clienteId, ticket }) => ({
@@ -29,8 +30,8 @@ export const ticketsApi = baseApi.injectEndpoints({
       invalidatesTags: (resultado, _error, { clienteId }) => [
         { type: 'Cliente', id: clienteId },
         { type: 'Cliente', id: 'LISTA' },
-        // La factura que devuelve la respuesta: puede ser una nueva, si el
-        // backend cerro el periodo vencido en este mismo request.
+        // La factura activa, con el ticket ya sumado. Puede ser una recien
+        // abierta si la anterior se habia saldado.
         ...(resultado ? [{ type: 'Factura' as const, id: resultado.factura.id }] : []),
         { type: 'Factura', id: 'LISTA' },
         { type: 'Factura', id: 'VENCIDAS' },

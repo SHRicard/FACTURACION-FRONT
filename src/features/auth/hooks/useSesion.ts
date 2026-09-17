@@ -8,6 +8,7 @@ import { useAppDispatch, useAppSelector } from '@/store';
 
 import {
   selectEstaAutenticado,
+  selectPendiente,
   selectSesionVerificada,
   selectUsuario,
   sesionCerrada,
@@ -18,6 +19,8 @@ export function useSesion() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const usuario = useAppSelector(selectUsuario);
+  /** Que le falta para usar la app: el DNI, la marca, o nada (null). */
+  const pendiente = useAppSelector(selectPendiente);
   const estaAutenticado = useAppSelector(selectEstaAutenticado);
   const verificada = useAppSelector(selectSesionVerificada);
 
@@ -37,5 +40,5 @@ export function useSesion() {
     router.replace('/login');
   }, [dispatch, router]);
 
-  return { usuario, estaAutenticado, verificada, cerrarSesion };
+  return { usuario, pendiente, estaAutenticado, verificada, cerrarSesion };
 }

@@ -1,6 +1,6 @@
 import type { Href } from 'expo-router';
 
-import type { Rol } from './types';
+import type { Pendiente, Rol } from './types';
 
 /**
  * Donde aterriza cada rol al entrar a la app.
@@ -21,3 +21,17 @@ export const INICIO_POR_ROL = {
 
 /** A donde mandar a alguien sin sesion. */
 export const RUTA_LOGIN = '/login' satisfies Href;
+
+/**
+ * La pantalla de bienvenida para lo que le falta a la cuenta. Mientras haya
+ * algo pendiente, ni la raiz ni el area de administrador dejan pasar: sin
+ * terminos aceptados, sin DNI o sin marca, el backend responde 403 a todo lo
+ * del negocio.
+ *
+ * El orden es el mismo que el del backend: terminos → perfil → marca → adentro.
+ */
+export const RUTA_POR_PENDIENTE = {
+  terminos: '/bienvenida/terminos',
+  perfil: '/bienvenida/perfil',
+  marca: '/bienvenida/marca',
+} as const satisfies Record<NonNullable<Pendiente>, Href>;

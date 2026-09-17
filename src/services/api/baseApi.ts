@@ -4,11 +4,20 @@ import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolk
 import { API_BASE_URL } from '@/config';
 import { SecureStorageKeys, secureStorageService } from '@/services/storage';
 
+/**
+ * El `Authorization` de la sesion. Lo usa RTK Query y tambien lo que no pasa
+ * por RTK Query (bajar el PDF de una factura a un archivo): un solo lugar sabe
+ * de donde sale el token.
+ */
+export function headersDeSesion(): Record<string, string> {
+  const token = secureStorageService.getString(SecureStorageKeys.AUTH_TOKEN);
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 const fetchConToken = fetchBaseQuery({
   baseUrl: API_BASE_URL,
   prepareHeaders: (headers) => {
-    const token = secureStorageService.getString(SecureStorageKeys.AUTH_TOKEN);
-    if (token) headers.set('Authorization', `Bearer ${token}`);
+    for (const [clave, valor] of Object.entries(headersDeSesion())) headers.set(clave, valor);
     return headers;
   },
 });
@@ -56,7 +65,16 @@ const baseQuery: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> =
  *
  * ⚠️ Al agregar un endpoint nuevo con su tag, sumalo ACA.
  */
-export const TAGS_API = ['Usuario', 'Cliente', 'Especie', 'Ticket', 'Factura'] as const;
+export const TAGS_API = [
+  'Usuario',
+  'Legal',
+  'Cliente',
+  'Especie',
+  'Ticket',
+  'Factura',
+  'Marca',
+  'Metrica',
+] as const;
 
 /**
  * Base de RTK Query para toda la app. Las features NO crean su propia `createApi`:

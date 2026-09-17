@@ -71,6 +71,22 @@
         {
           "enforceContrast": false
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Usamos tu ubicación para completar la dirección de tu negocio. Solo cuando tocás \"Usar mi ubicación\".",
+          "isAndroidBackgroundLocationEnabled": false,
+          "isIosBackgroundLocationEnabled": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Usamos tus fotos para que elijas el logo de tu marca. Solo cuando tocás \"Subir logo\".",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
       ]
     ],
     "experiments": {

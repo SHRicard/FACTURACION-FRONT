@@ -1,6 +1,9 @@
+export { AceptoTerminos } from './AceptoTerminos';
 export { ArranqueSesion } from './ArranqueSesion';
 export { AuthLayout } from './AuthLayout';
 export { BotonGoogle } from './BotonGoogle';
+export { ConsentimientoGoogle } from './ConsentimientoGoogle';
 export { EnlaceAuth } from './EnlaceAuth';
 export { LogoGoogle } from './LogoGoogle';
+export { PuertaBienvenida } from './PuertaBienvenida';
 export { RutaProtegida } from './RutaProtegida';

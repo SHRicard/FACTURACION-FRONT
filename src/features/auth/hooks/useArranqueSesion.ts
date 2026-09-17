@@ -48,8 +48,8 @@ export function useArranqueSesion() {
 
     void (async () => {
       try {
-        const usuario = await pedirUsuario().unwrap();
-        if (vigente) dispatch(sesionRestaurada(usuario));
+        const actual = await pedirUsuario().unwrap();
+        if (vigente) dispatch(sesionRestaurada(actual));
       } catch {
         // Token vencido, revocado, o el backend no contesta. En cualquier caso
         // no hay sesion utilizable: se limpia y se sigue como anonimo.

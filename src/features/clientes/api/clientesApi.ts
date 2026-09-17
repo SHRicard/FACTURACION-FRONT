@@ -1,12 +1,19 @@
 import { baseApi } from '@/services/api';
 
-import { clienteDetalleSchema, clienteSchema, paginaClientesSchema } from '../schemas';
+import {
+  clienteDetalleSchema,
+  clienteSchema,
+  paginaClientesSchema,
+  paginaHistorialSchema,
+} from '../schemas';
 import type {
   Cliente,
   ClienteDetalle,
   DatosCliente,
   FiltrosClientes,
+  FiltrosHistorial,
   PaginaClientes,
+  PaginaHistorial,
 } from '../types';
 
 /** Cuantos clientes trae cada pagina. El backend acepta hasta 100. */
@@ -31,6 +38,15 @@ function armarQuery(filtros: FiltrosClientes, pagina: number): string {
   return `?${params.toString()}`;
 }
 
+/** El query del historial: `todos` es el defecto del backend y no viaja. */
+function armarQueryHistorial({ tipo }: FiltrosHistorial, pagina: number): string {
+  const params = new URLSearchParams();
+  if (tipo !== 'todos') params.set('tipo', tipo);
+  if (pagina > 1) params.set('pagina', String(pagina));
+  params.set('porPagina', String(POR_PAGINA));
+  return `?${params.toString()}`;
+}
+
 /**
  * Endpoints de clientes. No hay DELETE a proposito: borrar un cliente se lleva
  * su historial de compras y las metricas del periodo. Cuando haga falta sacarlo
@@ -41,10 +57,9 @@ export const clientesApi = baseApi.injectEndpoints({
     /**
      * Listado con scroll infinito.
      *
-     * Es una `infiniteQuery` y no una query comun: asi RTK Query acumula las
-     * paginas en una sola entrada de cache, y `refetch` (el de tirar para abajo)
-     * vuelve a pedir todas las que estaban cargadas en vez de tirar al usuario
-     * de vuelta a la primera.
+     * Es una `infiniteQuery`: RTK Query acumula las paginas en una sola entrada de
+     * cache a medida que se scrollea. Al recargar vuelve a la primera pagina
+     * (`refetchCachedPages: false`): una sola request, no una por pagina cargada.
      */
     listarClientes: build.infiniteQuery<PaginaClientes, FiltrosClientes, number>({
       infiniteQueryOptions: {
@@ -52,6 +67,10 @@ export const clientesApi = baseApi.injectEndpoints({
         // `undefined` = no hay mas: es lo que apaga el `hasNextPage` del hook.
         getNextPageParam: (ultima) =>
           ultima.pagina < ultima.paginas ? ultima.pagina + 1 : undefined,
+        // Al recargar (tirar para abajo, o un tag invalidado) se pide SOLO la
+        // primera pagina. Sin esto RTK Query re-pide en fila todas las que el
+        // usuario llego a scrollear: una request por pagina cargada.
+        refetchCachedPages: false,
       },
       query: ({ queryArg, pageParam }) => ({ url: `/clientes${armarQuery(queryArg, pageParam)}` }),
       transformResponse: (respuesta: unknown) => paginaClientesSchema.parse(respuesta),
@@ -67,6 +86,34 @@ export const clientesApi = baseApi.injectEndpoints({
       query: (id) => ({ url: `/clientes/${encodeURIComponent(id)}` }),
       transformResponse: (respuesta: unknown) => clienteDetalleSchema.parse(respuesta),
       providesTags: (_resultado, _error, id) => [{ type: 'Cliente', id }],
+    }),
+
+    /**
+     * El historial completo: resumen, sus facturas y todos sus movimientos
+     * (compras y pagos), paginados del mas nuevo al mas viejo. El resumen y las
+     * facturas vienen iguales en cada pagina y se leen de la primera.
+     *
+     * ⚠️ Todavia no existe en el backend: es el contrato que le pedimos en
+     * `docs/HISTORIAL_CLIENTE.md`. Hasta entonces responde 404 "Ruta no
+     * encontrada" y la pantalla lo avisa.
+     *
+     * Lleva el tag del cliente: un ticket, un pago o una anulacion lo invalidan,
+     * asi que el historial se re-pide solo.
+     */
+    historialCliente: build.infiniteQuery<PaginaHistorial, FiltrosHistorial, number>({
+      infiniteQueryOptions: {
+        initialPageParam: 1,
+        // La paginacion viene adentro de `movimientos`, no en la raiz.
+        getNextPageParam: ({ movimientos }) =>
+          movimientos.pagina < movimientos.paginas ? movimientos.pagina + 1 : undefined,
+        // Al recargar se pide SOLO la primera pagina, como en el listado.
+        refetchCachedPages: false,
+      },
+      query: ({ queryArg, pageParam }) => ({
+        url: `/clientes/${encodeURIComponent(queryArg.id)}/historial${armarQueryHistorial(queryArg, pageParam)}`,
+      }),
+      transformResponse: (respuesta: unknown) => paginaHistorialSchema.parse(respuesta),
+      providesTags: (_resultado, _error, { id }) => [{ type: 'Cliente' as const, id }],
     }),
 
     /** El backend le abre la primera factura solo: la respuesta ya la trae. */
@@ -100,6 +147,7 @@ export const clientesApi = baseApi.injectEndpoints({
 export const {
   useListarClientesInfiniteQuery,
   useClienteDetalleQuery,
+  useHistorialClienteInfiniteQuery,
   useCrearClienteMutation,
   useEditarClienteMutation,
 } = clientesApi;

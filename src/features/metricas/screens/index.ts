@@ -1,0 +1,11 @@
+export { ClientesInactivosScreen } from './ClientesInactivosScreen';
+export { DetalleEspecieScreen } from './DetalleEspecieScreen';
+export { DeudoresScreen } from './DeudoresScreen';
+export { FrecuenciaCompraScreen } from './FrecuenciaCompraScreen';
+export { MejoresClientesScreen } from './MejoresClientesScreen';
+export { MetricasScreen } from './MetricasScreen';
+export { MorososScreen } from './MorososScreen';
+export { PagosATiempoScreen } from './PagosATiempoScreen';
+export { PerfilClienteScreen } from './PerfilClienteScreen';
+export { TasaCobranzaScreen } from './TasaCobranzaScreen';
+export { VentasPorEspecieScreen } from './VentasPorEspecieScreen';

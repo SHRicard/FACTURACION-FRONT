@@ -3,14 +3,13 @@ import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 
-import { interpretarError } from '@/shared/utils';
+import { interpretarError, volverDelFormulario } from '@/shared/utils';
 
 import {
   useCrearTicketMutation,
   useEditarTicketMutation,
   useTicketDetalleQuery,
 } from '../api/ticketsApi';
-import { volverDelFormulario } from '../navegar';
 import { itemFormSchema, subtotalDe, ticketFormSchema } from '../schemas';
 import type { ItemForm, ItemNuevo, Ticket, TicketForm } from '../types';
 
@@ -34,6 +33,8 @@ function aFormulario(ticket: Ticket): TicketForm {
       precioUnitario: String(item.precioUnitario),
     })),
     pagado: ticket.pagado ? String(ticket.pagado) : '',
+    // La fecha no se corrige desde el ticket: se reprograma desde la factura.
+    venceEl: '',
   };
 }
 
@@ -41,12 +42,10 @@ function aFormulario(ticket: Ticket): TicketForm {
 export interface ResultadoTicket {
   /** Lo que quedo debiendo por este ticket. */
   faltante: number;
-  /** El saldo del periodo, ya recalculado. */
+  /** El saldo de la factura, ya recalculado. */
   saldo: number;
   /** Aviso de limite de credito, o null. El ticket se guardo igual. */
   warning: string | null;
-  /** El backend cerro el periodo vencido y abrio uno nuevo en este mismo request. */
-  periodoNuevo: boolean;
 }
 
 const aNumero = (valor: string) => Number(valor) || 0;
@@ -68,9 +67,8 @@ interface OpcionesGuardar {
   /** Sin id es un alta; con id, una correccion. */
   ticketId?: string;
   /**
-   * Id de la factura abierta del cliente, la que la ficha tiene en pantalla.
-   * Sirve para dos cosas: detectar que el backend renovo el periodo, y saber si
-   * este ticket todavia se puede tocar.
+   * Id de la factura activa del cliente, la que la ficha tiene en pantalla.
+   * Sirve para saber si este ticket todavia se puede tocar.
    */
   facturaAbiertaId?: string | null;
 }
@@ -96,7 +94,7 @@ export function useGuardarTicket({ clienteId, ticketId, facturaAbiertaId }: Opci
 
   const form = useForm<TicketForm>({
     resolver: zodResolver(ticketFormSchema),
-    defaultValues: { items: [itemVacio()], pagado: '' },
+    defaultValues: { items: [itemVacio()], pagado: '', venceEl: '' },
     mode: 'onBlur',
   });
 
@@ -177,6 +175,8 @@ export function useGuardarTicket({ clienteId, ticketId, facturaAbiertaId }: Opci
       // conserva el anterior, y si el ticket se achico, ese anterior ya no
       // entra y el backend responde 400.
       ...(ticketId || datos.pagado ? { pagado: aNumero(datos.pagado) } : {}),
+      // La fecha acordada solo viaja en el alta, y solo si se eligio una.
+      ...(!ticketId && datos.venceEl ? { venceEl: datos.venceEl } : {}),
     };
 
     try {
@@ -184,17 +184,9 @@ export function useGuardarTicket({ clienteId, ticketId, facturaAbiertaId }: Opci
         ? await editar({ id: ticketId, clienteId, ticket: cuerpo }).unwrap()
         : await crear({ clienteId, ticket: cuerpo }).unwrap();
 
-      /*
-       * La factura que vuelve puede NO ser la que estaba en pantalla: si venia
-       * vencida y con movimiento, el backend la cerro y abrio la del periodo
-       * siguiente dentro de este mismo request. Hay que usar siempre la de la
-       * respuesta, y avisar cuando cambio.
-       */
-      const periodoNuevo = Boolean(facturaAbiertaId) && respuesta.factura.id !== facturaAbiertaId;
-
       // Sin nada que contar no se interrumpe: se vuelve derecho a donde se
       // vino, que ya tiene el saldo nuevo porque la mutacion invalido sus tags.
-      if (!respuesta.warning && !periodoNuevo) {
+      if (!respuesta.warning) {
         volverDelFormulario(router, clienteId);
         return;
       }
@@ -203,7 +195,6 @@ export function useGuardarTicket({ clienteId, ticketId, facturaAbiertaId }: Opci
         faltante: respuesta.ticket.faltante,
         saldo: respuesta.factura.saldo,
         warning: respuesta.warning,
-        periodoNuevo,
       });
     } catch {
       // El error queda en el estado de la mutacion y se muestra desde ahi: los

@@ -1,1 +1,1 @@
-export { baseApi, TAGS_API } from './baseApi';
+export { baseApi, headersDeSesion, TAGS_API } from './baseApi';

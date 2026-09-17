@@ -1,13 +1,15 @@
 import type { ImperativeRouter } from 'expo-router';
 
 /**
- * Salida del formulario de ticket, despues de guardar o de anular.
+ * Salida de un formulario de la cuenta del cliente (ticket, pago), despues de
+ * guardar o de anular.
  *
  * Vuelve a DONDE SE VINO en vez de saltar siempre a la ficha del cliente. Es lo
  * correcto en los dos caminos por los que se llega: desde la ficha se vuelve a
- * la ficha, y desde la cuenta del periodo se vuelve a la cuenta —que es donde
- * se ve el ticket recien cargado—. Los dos destinos ya estan al dia porque la
- * mutacion invalido sus tags.
+ * la ficha, y desde la cuenta del periodo se vuelve a la cuenta. Los dos
+ * destinos ya estan al dia porque la mutacion invalido sus tags.
+ *
+ * Vive en `shared` porque lo usan dos features: tickets y pagos.
  *
  * ⚠️ NO usar `replace` aca. Estando parado en `/clientes/:id/ticket`, un
  * `replace` a `/clientes/:id` deja el stack en [lista, ficha, ficha]: la flecha

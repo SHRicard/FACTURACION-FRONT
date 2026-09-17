@@ -1,0 +1,1 @@
+export { PagoFormScreen } from './PagoFormScreen';

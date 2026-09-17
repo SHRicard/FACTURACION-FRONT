@@ -44,15 +44,16 @@ export const ticketSchema = z
   .transform(aId);
 
 /**
- * La factura del periodo con los totales ya recalculados.
+ * La factura activa del cliente con los totales ya recalculados. Es siempre la
+ * misma aunque este vencida: el ticket se suma a lo que ya debe.
  *
- * Los cinco totales son del PERIODO ENTERO, no de este ticket. El que se
+ * Los cinco totales son de la FACTURA ENTERA, no de este ticket. El que se
  * muestra es `saldo`.
  */
 export const facturaTicketSchema = z
   .object({
     _id: z.string(),
-    estado: z.enum(['abierta', 'cerrada', 'pagada', 'anulada']),
+    estado: z.enum(['abierta', 'pagada', 'anulada']),
     estadoVisible: z.string(),
     venceEl: z.string(),
     diasParaVencer: z.number(),
@@ -110,6 +111,11 @@ export const ticketFormSchema = z
     items: z.array(itemFormSchema).min(1, 'El ticket necesita al menos un ítem.'),
     /** Lo que deja en el momento. Vacio = se fia todo. */
     pagado: z.string().regex(/^\d*$/, 'Solo números, sin puntos.'),
+    /**
+     * La fecha que acordo con el cliente, `aaaa-mm-dd`. Vacio = sale de su
+     * ventana de pago. Solo vale en el primer ticket de la factura.
+     */
+    venceEl: z.string(),
   })
   .superRefine((datos, ctx) => {
     const total = datos.items.reduce(

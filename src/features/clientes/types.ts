@@ -5,9 +5,16 @@ import type {
   clienteEnListaSchema,
   clienteFormSchema,
   clienteSchema,
+  compraSchema,
   estadoFacturaSchema,
   facturaAbiertaSchema,
+  facturaDelHistorialSchema,
+  movimientoSchema,
+  pagoDelHistorialSchema,
   paginaClientesSchema,
+  paginaHistorialSchema,
+  resumenHistorialSchema,
+  tipoMovimientoSchema,
   ventanaPagoSchema,
 } from './schemas';
 
@@ -19,6 +26,14 @@ export type FacturaAbierta = z.infer<typeof facturaAbiertaSchema>;
 export type ClienteDetalle = z.infer<typeof clienteDetalleSchema>;
 export type PaginaClientes = z.infer<typeof paginaClientesSchema>;
 export type ClienteForm = z.infer<typeof clienteFormSchema>;
+
+export type TipoMovimiento = z.infer<typeof tipoMovimientoSchema>;
+export type Compra = z.infer<typeof compraSchema>;
+export type PagoDelHistorial = z.infer<typeof pagoDelHistorialSchema>;
+export type Movimiento = z.infer<typeof movimientoSchema>;
+export type FacturaDelHistorial = z.infer<typeof facturaDelHistorialSchema>;
+export type ResumenHistorial = z.infer<typeof resumenHistorialSchema>;
+export type PaginaHistorial = z.infer<typeof paginaHistorialSchema>;
 
 /** Lo que viaja al backend en el alta y en la edicion. */
 export interface DatosCliente {
@@ -39,4 +54,11 @@ export interface FiltrosClientes {
   /** Solo los que tienen alguna factura vencida. */
   vencidos?: boolean;
   porPagina?: number;
+}
+
+/** Lo que se pide del historial. La pagina tampoco va aca. */
+export interface FiltrosHistorial {
+  /** El id del cliente. */
+  id: string;
+  tipo: TipoMovimiento;
 }

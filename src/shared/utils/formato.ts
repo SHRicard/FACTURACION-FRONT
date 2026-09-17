@@ -18,6 +18,33 @@ export function formatearMoneda(monto: number): string {
   return MONEDA.format(monto);
 }
 
+/**
+ * `'2000000'` -> `'2.000.000'`. Para un monto MIENTRAS se escribe: trabaja con
+ * el texto y no con un numero, asi un campo vacio sigue vacio (no `0`) y no
+ * pierde digitos por redondeo.
+ */
+export function conPuntos(digitos: string): string {
+  return digitos.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+/** `'2.000.000'` -> `'2000000'`. Lo que se escribe, sin puntos ni nada que no sea digito. */
+export function soloDigitos(texto: string): string {
+  return texto.replace(/\D/g, '');
+}
+
+/**
+ * `'Ana María Gallo'` -> `'AG'`: primera y ultima palabra, como un contacto
+ * del telefono. Vacio si no hay nombre, para que quien lo use decida que
+ * dibujar en su lugar.
+ */
+export function iniciales(nombre: string): string {
+  const palabras = nombre.trim().split(/\s+/).filter(Boolean);
+  if (palabras.length === 0) return '';
+  const primera = palabras[0]?.[0] ?? '';
+  const ultima = palabras.length > 1 ? (palabras[palabras.length - 1]?.[0] ?? '') : '';
+  return (primera + ultima).toUpperCase();
+}
+
 /** `'2026-09-11T02:59:59.999Z'` -> `'11 de septiembre de 2026'`. */
 export function formatearFecha(iso?: string | null): string | null {
   if (!iso) return null;
@@ -30,6 +57,17 @@ export function formatearFechaCorta(iso?: string | null): string | null {
   if (!iso) return null;
   const fecha = DateTime.fromISO(iso).setLocale('es');
   return fecha.isValid ? fecha.toFormat('dd/LL/yyyy') : null;
+}
+
+/**
+ * Hoy, en `aaaa-mm-dd` y en hora de Argentina, que es como corta los dias el
+ * backend. Es el minimo de cualquier fecha que se acuerde con un cliente: el
+ * backend rechaza un vencimiento en un dia que ya paso.
+ */
+export function hoyEnArgentina(): string {
+  const enZona = DateTime.now().setZone('America/Argentina/Buenos_Aires');
+  // Si el motor de JS no conoce la zona, la hora del telefono antes que nada.
+  return (enZona.isValid ? enZona : DateTime.now()).toISODate() ?? '';
 }
 
 /**

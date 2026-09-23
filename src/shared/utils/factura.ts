@@ -16,6 +16,8 @@ const TONO_POR_ESTADO: Record<string, BadgeTone> = {
   'sin deuda': 'success',
   pagada: 'success',
   anulada: 'neutral',
+  // Factura abierta sin tickets: no es deuda ni está vencida (K3).
+  'sin compras': 'neutral',
 };
 
 export const tonoEstadoFactura = (estadoVisible: string): BadgeTone =>
@@ -25,8 +27,11 @@ export const tonoEstadoFactura = (estadoVisible: string): BadgeTone =>
  * El plazo en una linea corta, para una fila de lista.
  *
  * `diasParaVencer` negativo son dias de atraso: -29 es "29 dias de atraso".
+ * `null` es una factura sin compras (K3): su fecha es provisoria, asi que no
+ * se habla de plazo.
  */
-export function textoVencimiento(diasParaVencer: number): string {
+export function textoVencimiento(diasParaVencer: number | null): string {
+  if (diasParaVencer === null) return 'Sin compras todavía';
   if (diasParaVencer < 0) {
     const dias = Math.abs(diasParaVencer);
     return dias === 1 ? '1 dia de atraso' : `${dias} dias de atraso`;

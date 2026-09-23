@@ -177,6 +177,11 @@ export function FacturaDetalleMovil() {
             <Text variant="caption" tone="muted">
               Saldada el {saldadaEl}
             </Text>
+          ) : factura.diasParaVencer === null ? (
+            // Sin compras: la fecha es provisoria, asi que no se muestra (K3).
+            <Text variant="caption" tone="muted">
+              {textoVencimiento(null)}
+            </Text>
           ) : (
             <Text variant="caption" tone={factura.vencida ? 'error' : 'muted'}>
               {textoVencimiento(factura.diasParaVencer)} · vence el{' '}

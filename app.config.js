@@ -17,7 +17,44 @@ function schemeDesdeClientId(clientId) {
   return `com.googleusercontent.apps.${id}`;
 }
 
+/** Los perfiles de EAS que terminan en la tienda. */
+const PERFILES_DE_TIENDA = ['production'];
+
+/**
+ * Corta un build de tienda al que le faltan las variables de entorno.
+ *
+ * Un build de tienda sin ellas sale andando pero roto y en silencio: apunta a
+ * localhost, o `config/index.ts` oculta el botón de Google y quien se registró
+ * con Google no puede entrar. Mejor que el build falle a que se publique eso.
+ *
+ * El desarrollo local y `expo run:android` no se ven afectados:
+ * `EAS_BUILD_PROFILE` solo existe en los builds de EAS.
+ */
+function exigirVariablesDeTienda() {
+  const perfil = process.env.EAS_BUILD_PROFILE;
+  if (!PERFILES_DE_TIENDA.includes(perfil)) return;
+
+  const problemas = [];
+  const apiUrl = process.env.EXPO_PUBLIC_API_BASE_URL ?? '';
+  if (!apiUrl.startsWith('https://') || /localhost|127\.0\.0\.1|10\.0\.2\.2/.test(apiUrl)) {
+    problemas.push('EXPO_PUBLIC_API_BASE_URL tiene que ser una URL https que no sea localhost');
+  }
+  if (!process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID_WEB) {
+    problemas.push(
+      'falta EXPO_PUBLIC_GOOGLE_CLIENT_ID_WEB (sin él no aparece "Continuar con Google" y quien se registró con Google no puede entrar)',
+    );
+  }
+
+  if (problemas.length > 0) {
+    throw new Error(
+      `Build "${perfil}" mal configurado:\n- ${problemas.join('\n- ')}\nCargalas como variables de entorno de EAS para ese perfil (el .env no se sube: está en .gitignore).`,
+    );
+  }
+}
+
 module.exports = ({ config }) => {
+  exigirVariablesDeTienda();
+
   const iosUrlScheme = schemeDesdeClientId(process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS);
 
   // Sin client ID de iOS el plugin no se agrega: pedirlo igual hace fallar el

@@ -33,6 +33,15 @@ import type {
  */
 export const authApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
+    /*
+     * Las mutations que ABREN sesión (login, registro, Google, reseteo y cambio
+     * de contraseña) no invalidan 'Usuario' a propósito. RTK hace el refetch de
+     * `/auth/me` dentro del mismo dispatch del fulfilled, y `prepareHeaders`
+     * lee el storage antes de que `useAbrirSesion` guarde el token nuevo: el
+     * pedido salía sin token o con el viejo, volvía 401 y el middleware cerraba
+     * la sesión recién abierta en cada intento (C1). La sesión nueva ya viene
+     * en la respuesta y va directo al slice con `sesionIniciada`.
+     */
     login: build.mutation<Sesion, LoginForm>({
       query: (credenciales) => ({
         url: '/auth/login',
@@ -40,7 +49,6 @@ export const authApi = baseApi.injectEndpoints({
         body: loginSchema.parse(credenciales),
       }),
       transformResponse: (respuesta: unknown) => sesionSchema.parse(respuesta),
-      invalidatesTags: ['Usuario'],
     }),
 
     registro: build.mutation<Sesion, RegistroForm>({
@@ -51,7 +59,6 @@ export const authApi = baseApi.injectEndpoints({
         return { url: '/auth/registro', method: 'POST', body: cuerpo };
       },
       transformResponse: (respuesta: unknown) => sesionSchema.parse(respuesta),
-      invalidatesTags: ['Usuario'],
     }),
 
     /**
@@ -78,7 +85,6 @@ export const authApi = baseApi.injectEndpoints({
             : { idToken, aceptoTerminosYCondiciones },
       }),
       transformResponse: (respuesta: unknown) => sesionGoogleSchema.parse(respuesta),
-      invalidatesTags: ['Usuario'],
     }),
 
     /**
@@ -119,7 +125,6 @@ export const authApi = baseApi.injectEndpoints({
         body: { token, password },
       }),
       transformResponse: (respuesta: unknown) => sesionSchema.parse(respuesta),
-      invalidatesTags: ['Usuario'],
     }),
 
     /**
@@ -136,7 +141,6 @@ export const authApi = baseApi.injectEndpoints({
         };
       },
       transformResponse: (respuesta: unknown) => sesionSchema.parse(respuesta),
-      invalidatesTags: ['Usuario'],
     }),
   }),
 });

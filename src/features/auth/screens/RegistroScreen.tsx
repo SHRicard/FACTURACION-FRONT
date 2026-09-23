@@ -23,6 +23,7 @@ export function RegistroScreen() {
 
   return (
     <AuthLayout
+      logo
       titulo="Crear cuenta"
       subtitulo="Completa tus datos para empezar a facturar."
       error={error}
@@ -114,6 +115,7 @@ export function RegistroScreen() {
           */}
           <ConsentimientoGoogle
             visible={google.consentimiento.visible}
+            cuenta={google.consentimiento.cuenta}
             valor={google.consentimiento.acepto}
             onCambiar={google.consentimiento.cambiar}
             onAceptar={google.consentimiento.confirmar}

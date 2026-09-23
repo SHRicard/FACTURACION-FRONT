@@ -1,5 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 
+import { actualizacionMiddleware } from '@/features/actualizacion/store/actualizacionMiddleware';
+import { actualizacionReducer } from '@/features/actualizacion/store/actualizacionSlice';
 import { authReducer } from '@/features/auth/store/authSlice';
 import { sesionCaidaMiddleware } from '@/features/auth/store/sesionCaidaMiddleware';
 import { onboardingReducer } from '@/features/onboarding/store/onboardingSlice';
@@ -12,13 +14,15 @@ export const store = configureStore({
     // Los slices de cada feature se registran aca:
     auth: authReducer,
     onboarding: onboardingReducer,
+    actualizacion: actualizacionReducer,
   },
   middleware: (getDefaultMiddleware) =>
-    // `sesionCaidaMiddleware` va DESPUES del de RTK Query: necesita ver las
-    // acciones `rejected` que este genera.
+    // `sesionCaidaMiddleware` y `actualizacionMiddleware` van DESPUES del de
+    // RTK Query: necesitan ver las acciones `rejected` que este genera.
     getDefaultMiddleware().concat(
       baseApi.middleware,
       sesionCaidaMiddleware,
+      actualizacionMiddleware,
       persistirOnboardingMiddleware,
     ),
 });

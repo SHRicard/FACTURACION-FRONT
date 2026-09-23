@@ -13,10 +13,15 @@ import type { Pendiente, Rol } from './types';
  * seccion no existe. Cuando se arme, este mapa y los roles que acepta
  * `/admin` (ver `src/app/admin/_layout.tsx`) se cambian JUNTOS: si uno manda a
  * `/admin` y el otro no lo deja entrar, el guard rebota para siempre.
+ *
+ * `desconocido`: un rol nuevo del backend que esta versión no conoce no se
+ * adivina, se pide actualizar (K8). Así RutaProtegida, EntradaScreen y
+ * PuertaBienvenida lo mandan solas a esa pantalla.
  */
 export const INICIO_POR_ROL = {
   administrador: '/admin',
   super_admin: '/admin',
+  desconocido: '/actualizar-app',
 } as const satisfies Record<Rol, Href>;
 
 /** A donde mandar a alguien sin sesion. */
@@ -29,9 +34,13 @@ export const RUTA_LOGIN = '/login' satisfies Href;
  * del negocio.
  *
  * El orden es el mismo que el del backend: terminos → perfil → marca → adentro.
+ *
+ * `desconocido`: un paso nuevo del backend que esta versión no conoce tampoco
+ * se adivina; se pide actualizar (K8).
  */
 export const RUTA_POR_PENDIENTE = {
   terminos: '/bienvenida/terminos',
   perfil: '/bienvenida/perfil',
   marca: '/bienvenida/marca',
+  desconocido: '/actualizar-app',
 } as const satisfies Record<NonNullable<Pendiente>, Href>;

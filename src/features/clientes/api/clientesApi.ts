@@ -58,8 +58,11 @@ export const clientesApi = baseApi.injectEndpoints({
      * Listado con scroll infinito.
      *
      * Es una `infiniteQuery`: RTK Query acumula las paginas en una sola entrada de
-     * cache a medida que se scrollea. Al recargar vuelve a la primera pagina
-     * (`refetchCachedPages: false`): una sola request, no una por pagina cargada.
+     * cache a medida que se scrollea. Cuando un tag se invalida (un ticket, un
+     * pago, un alta) se vuelven a pedir TODAS las paginas cargadas: si no, la
+     * lista vuelve a 20 filas y se pierde el scroll. El gesto de tirar para
+     * abajo pide solo la primera (`refetch({ refetchCachedPages: false })` en
+     * useClientes).
      */
     listarClientes: build.infiniteQuery<PaginaClientes, FiltrosClientes, number>({
       infiniteQueryOptions: {
@@ -67,10 +70,10 @@ export const clientesApi = baseApi.injectEndpoints({
         // `undefined` = no hay mas: es lo que apaga el `hasNextPage` del hook.
         getNextPageParam: (ultima) =>
           ultima.pagina < ultima.paginas ? ultima.pagina + 1 : undefined,
-        // Al recargar (tirar para abajo, o un tag invalidado) se pide SOLO la
-        // primera pagina. Sin esto RTK Query re-pide en fila todas las que el
-        // usuario llego a scrollear: una request por pagina cargada.
-        refetchCachedPages: false,
+        // Al invalidar un tag se re-piden en fila todas las paginas que el
+        // usuario llego a scrollear (una request por pagina), asi la fila que
+        // cambio se actualiza sin que la lista se achique debajo del dedo.
+        refetchCachedPages: true,
       },
       query: ({ queryArg, pageParam }) => ({ url: `/clientes${armarQuery(queryArg, pageParam)}` }),
       transformResponse: (respuesta: unknown) => paginaClientesSchema.parse(respuesta),
@@ -106,7 +109,7 @@ export const clientesApi = baseApi.injectEndpoints({
         // La paginacion viene adentro de `movimientos`, no en la raiz.
         getNextPageParam: ({ movimientos }) =>
           movimientos.pagina < movimientos.paginas ? movimientos.pagina + 1 : undefined,
-        // Al recargar se pide SOLO la primera pagina, como en el listado.
+        // Al recargar se pide SOLO la primera pagina.
         refetchCachedPages: false,
       },
       query: ({ queryArg, pageParam }) => ({
@@ -120,14 +123,22 @@ export const clientesApi = baseApi.injectEndpoints({
     crearCliente: build.mutation<ClienteDetalle, DatosCliente>({
       query: (datos) => ({ url: '/clientes', method: 'POST', body: datos }),
       transformResponse: (respuesta: unknown) => clienteDetalleSchema.parse(respuesta),
-      invalidatesTags: [{ type: 'Cliente', id: 'LISTA' }],
+      // Abre su primera factura (el listado de facturas), suma un cliente al
+      // Inicio y a las estadisticas de Mi marca.
+      invalidatesTags: [
+        { type: 'Cliente', id: 'LISTA' },
+        { type: 'Factura', id: 'LISTA' },
+        { type: 'Metrica', id: 'TODAS' },
+        'Marca',
+      ],
     }),
 
     /**
      * Edicion PARCIAL: lo que no se manda queda como esta, no se borra.
      *
      * Invalida tambien la lista porque un cambio de nombre o de limite se ve
-     * en la fila del listado.
+     * en la fila del listado. Y el listado de facturas (trae el nombre del
+     * cliente) y el Inicio (lista nombres), por el mismo motivo.
      */
     editarCliente: build.mutation<Cliente, { id: string; cambios: Partial<DatosCliente> }>({
       query: ({ id, cambios }) => ({
@@ -139,6 +150,8 @@ export const clientesApi = baseApi.injectEndpoints({
       invalidatesTags: (_resultado, _error, { id }) => [
         { type: 'Cliente', id },
         { type: 'Cliente', id: 'LISTA' },
+        { type: 'Factura', id: 'LISTA' },
+        { type: 'Metrica', id: 'TODAS' },
       ],
     }),
   }),

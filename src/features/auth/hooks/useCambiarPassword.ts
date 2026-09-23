@@ -31,7 +31,7 @@ export function useCambiarPassword() {
       abrirSesion(sesion);
       form.reset();
     } catch (fallo) {
-      aplicarDetalles(form, interpretarError(fallo)?.detalles ?? null);
+      aplicarDetalles(form, interpretarError(fallo));
     }
   });
 

@@ -1,6 +1,7 @@
 export {
   cerrarSesionGoogle,
   configurarGoogle,
+  entrarConGoogle,
   GoogleCancelado,
-  obtenerIdTokenGoogle,
+  type EntradaGoogle,
 } from './google';

@@ -41,7 +41,9 @@ export const pagoSchema = z
     /** Foto del momento del pago, como un recibo de papel. */
     saldoAnterior: z.number().nullish(),
     saldoPosterior: z.number().nullish(),
-    tipo: tipoPagoSchema.nullish(),
+    // Un tipo nuevo del backend se lee como "sin tipo", igual que los pagos
+    // viejos, en vez de romper la factura (K8).
+    tipo: tipoPagoSchema.nullish().catch(null),
     registradoPor: z
       .union([z.string(), z.object({ _id: z.string(), nombre: z.string() })])
       .nullish(),
@@ -67,7 +69,12 @@ export const entregaSchema = z
     nota: z.string().nullish(),
     saldoAnterior: z.number(),
     saldoPosterior: z.number(),
-    tipo: tipoPagoSchema,
+    /**
+     * String y no `tipoPagoSchema`: es la etiqueta del Badge del comprobante y
+     * solo se compara con 'completo'. Un tipo nuevo se muestra tal cual en vez
+     * de romper el comprobante (K8).
+     */
+    tipo: z.string(),
     cantidadFacturas: z.number(),
   })
   .transform(aId);
@@ -101,6 +108,11 @@ export const respuestaPagoSchema = z.object({
   facturas: z.array(facturaTocadaSchema),
   /** Lo que debe el cliente ahora, sumando todas sus facturas. */
   deudaTotal: z.number(),
+  /**
+   * true = ese cobro ya se había registrado con la misma clave (reintento con
+   * mala señal); no se volvió a registrar (K1).
+   */
+  repetido: z.boolean().default(false),
 });
 
 export const respuestaAnulacionPagoSchema = z.object({
@@ -109,6 +121,12 @@ export const respuestaAnulacionPagoSchema = z.object({
   facturas: z.array(facturaTocadaSchema),
   deudaTotal: z.number(),
 });
+
+/**
+ * El tope de un cobro. Es el mismo que valida el back (services/pagos.ts,
+ * `leerDatosPago`, K16): si cambia alla, cambia aca.
+ */
+export const MONTO_MAXIMO_PAGO = 1_000_000_000;
 
 /**
  * Lo que escribe la persona.
@@ -123,7 +141,8 @@ export const pagoFormSchema = z.object({
     .string()
     .min(1, 'Poné cuánto deja.')
     .regex(/^\d+$/, 'Solo números, sin puntos.')
-    .refine((valor) => Number(valor) > 0, 'Poné cuánto deja.'),
+    .refine((valor) => Number(valor) > 0, 'Poné cuánto deja.')
+    .refine((valor) => Number(valor) <= MONTO_MAXIMO_PAGO, 'El monto va hasta $1.000.000.000.'),
   metodoPago: metodoPagoSchema,
   nota: z.string().trim().max(300, 'La nota puede tener hasta 300 caracteres.'),
 });

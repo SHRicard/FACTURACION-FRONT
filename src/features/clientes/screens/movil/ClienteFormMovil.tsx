@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 
-import { Button, CampoControlado, Pantalla, Text } from '@/shared/ui/atoms';
+import { Button, CampoControlado, EstadoVacio, Pantalla, Text } from '@/shared/ui/atoms';
 import { useTheme, type Theme } from '@/theme';
 
 import {
@@ -40,6 +40,7 @@ export function ClienteFormMovil() {
 
   const ficha = useCliente(id);
   const { form, enviar, esEdicion, cargando, error } = useGuardarCliente({
+    clienteId: id,
     cliente: ficha.cliente,
   });
 
@@ -66,6 +67,24 @@ export function ClienteFormMovil() {
         <View style={styles.centro}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
+      </Pantalla>
+    );
+  }
+
+  // Sin los datos no se edita: el formulario vacio se leeria como "Nuevo
+  // cliente" y guardar pisaria lo que habia.
+  if (id && !ficha.cliente) {
+    return (
+      <Pantalla titulo="Editar cliente" ancho="formulario" onVolver={volver} labelVolver="Cliente">
+        <EstadoVacio
+          titulo={ficha.noExiste ? 'Este cliente no existe' : 'No pudimos traer al cliente'}
+          descripcion={ficha.noExiste ? undefined : (ficha.error ?? undefined)}
+          accion={
+            ficha.noExiste ? undefined : (
+              <Button label="Reintentar" variant="secondary" onPress={ficha.reintentar} />
+            )
+          }
+        />
       </Pantalla>
     );
   }

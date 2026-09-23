@@ -1,7 +1,8 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query';
+import { Platform } from 'react-native';
 
-import { API_BASE_URL } from '@/config';
+import { API_BASE_URL, VERSION_APP } from '@/config';
 import { SecureStorageKeys, secureStorageService } from '@/services/storage';
 
 /**
@@ -14,10 +15,34 @@ export function headersDeSesion(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+/**
+ * Quién pide: la versión de la app y la plataforma. El backend corta con 426
+ * a las versiones por debajo de la mínima (K8); sin versión no se manda y el
+ * back no bloquea. Acá `Platform` sí es de la plataforma: define la tienda a
+ * la que hay que mandar a actualizar.
+ */
+export function headersDeApp(): Record<string, string> {
+  return {
+    'X-App-Plataforma': Platform.OS,
+    ...(VERSION_APP ? { 'X-App-Version': VERSION_APP } : {}),
+  };
+}
+
 const fetchConToken = fetchBaseQuery({
   baseUrl: API_BASE_URL,
+  // Sin tope, una request colgada con mala señal deja el botón girando para
+  // siempre. Con tope, "no sé si se guardó" pasa a ser un TIMEOUT_ERROR: un
+  // estado explícito y reintentable (con la misma clave de idempotencia, K1).
+  // En Android el OkHttp de RN trae los timeouts en 0 (no corta nunca), así
+  // que sin esto el arranque quedaba en la rueda durante minutos.
+  // ⚠️ En nativo el corte llega como FETCH_ERROR y no como TIMEOUT_ERROR:
+  // whatwg-fetch rechaza con AbortError sea cual sea el motivo
+  // (whatwg-fetch/dist/fetch.umd.js l.537/579). Por eso se tratan igual.
+  timeout: 20_000,
   prepareHeaders: (headers) => {
-    for (const [clave, valor] of Object.entries(headersDeSesion())) headers.set(clave, valor);
+    for (const [clave, valor] of Object.entries({ ...headersDeApp(), ...headersDeSesion() })) {
+      headers.set(clave, valor);
+    }
     return headers;
   },
 });

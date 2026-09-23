@@ -80,10 +80,15 @@ const movimientoSchema = z.object({
   clientes: z.number(),
 });
 
-/** Un movimiento de la marca: una compra o un pago, sin anulados. */
+/**
+ * Un movimiento de la marca: una compra o un pago, sin anulados.
+ *
+ * Un tipo de movimiento nuevo del backend cae en 'desconocido' y se saltea (ver
+ * `actividad` en `resumenDashboardSchema`) en vez de romper el Inicio (K8).
+ */
 export const actividadSchema = z
   .object({
-    tipo: z.enum(['compra', 'pago']),
+    tipo: z.enum(['compra', 'pago', 'desconocido']).catch('desconocido'),
     _id: z.string(),
     fecha: z.string(),
     cliente: clienteDelResumenSchema,
@@ -160,5 +165,12 @@ export const resumenDashboardSchema = z.object({
       }),
     )
     .default([]),
-  actividad: z.array(actividadSchema).default([]),
+  /**
+   * Los de tipo 'desconocido' se filtran acá, en el schema, para que ni
+   * DashboardMovil ni FilaActividad tengan que saber que existen (K8).
+   */
+  actividad: z
+    .array(actividadSchema)
+    .default([])
+    .transform((lista) => lista.filter((movimiento) => movimiento.tipo !== 'desconocido')),
 });

@@ -1,12 +1,20 @@
 import { AlertCircle } from 'lucide-react-native';
 import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, ScrollView, StyleSheet, View } from 'react-native';
+import { Image, KeyboardAvoidingView, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Container, Text } from '@/shared/ui/atoms';
 import { useTheme, type Theme } from '@/theme';
 
+/**
+ * Lado del logo, en puntos. No sale del theme porque no lo comparte nadie: lo
+ * dibuja solo este marco, y el asset ya viene en 1x/2x/3x para esta medida.
+ */
+const LADO_LOGO = 128;
+
 type AuthLayoutProps = {
+  /** Dibuja el logo de la app arriba del titulo. */
+  logo?: boolean;
   titulo: string;
   subtitulo: string;
   /** Error general de la operacion (no de un campo). */
@@ -23,7 +31,14 @@ type AuthLayoutProps = {
  * el contenido siga scrolleando en pantallas chicas y que el formulario no se
  * estire a lo ancho de un monitor (de eso se ocupa el `Container`).
  */
-export function AuthLayout({ titulo, subtitulo, error, children, footer }: AuthLayoutProps) {
+export function AuthLayout({
+  logo = false,
+  titulo,
+  subtitulo,
+  error,
+  children,
+  footer,
+}: AuthLayoutProps) {
   const theme = useTheme();
   const styles = createStyles(theme);
 
@@ -50,6 +65,20 @@ export function AuthLayout({ titulo, subtitulo, error, children, footer }: AuthL
         >
           {/* Un formulario de login no gana nada midiendo 1900px. */}
           <Container ancho="formulario" style={styles.contenido}>
+            {/*
+              El asset se importa por nombre base: Metro elige la densidad
+              (@2x/@3x) segun la pantalla. La ruta tiene que ser estatica.
+            */}
+            {logo ? (
+              <Image
+                source={require('../assets/logo-app.png')}
+                style={styles.logo}
+                resizeMode="contain"
+                accessibilityRole="image"
+                accessibilityLabel="Facturación FCT"
+              />
+            ) : null}
+
             <View style={styles.encabezado}>
               <Text variant="heading" weight="bold" accessibilityRole="header">
                 {titulo}
@@ -91,6 +120,7 @@ const createStyles = (theme: Theme) =>
       paddingVertical: theme.spacing.lg,
     },
     contenido: { gap: theme.spacing.lg },
+    logo: { width: LADO_LOGO, height: LADO_LOGO, alignSelf: 'center' },
     encabezado: { gap: theme.spacing.xs },
     error: {
       flexDirection: 'row',

@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
 import { useForm } from 'react-hook-form';
 
+import { GOOGLE_HABILITADO } from '@/config';
 import { aplicarDetalles, interpretarError } from '@/shared/utils';
 
 import { useLoginMutation } from '../api/authApi';
@@ -32,7 +33,7 @@ export function useLogin() {
       abrirSesion(sesion);
       router.replace('/');
     } catch (fallo) {
-      aplicarDetalles(form, interpretarError(fallo)?.detalles ?? null);
+      aplicarDetalles(form, interpretarError(fallo));
     }
   });
 
@@ -41,5 +42,11 @@ export function useLogin() {
     enviar,
     cargando: isLoading,
     error: detalle?.mensaje ?? null,
+    /**
+     * Debajo del error, "¿Te registraste con Google?". El back ya no dice qué
+     * emails usan Google (K14): responde el mismo 401 para todo, así que la
+     * pista va siempre ante un 401.
+     */
+    pistaGoogle: detalle?.status === 401 && GOOGLE_HABILITADO,
   };
 }

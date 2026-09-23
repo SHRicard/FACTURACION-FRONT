@@ -64,4 +64,11 @@ export const createStyles = (theme: Theme) =>
       justifyContent: 'flex-end',
       gap: theme.spacing.sm,
     },
+    // Apiladas: cada boton se estira solo si ademas le pasan `fullWidth`, asi
+    // que el `alignItems` es lo que evita que queden centrados y angostos.
+    accionesApiladas: {
+      flexDirection: 'column',
+      alignItems: 'stretch',
+      justifyContent: 'flex-start',
+    },
   });

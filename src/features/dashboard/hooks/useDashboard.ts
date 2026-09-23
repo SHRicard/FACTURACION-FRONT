@@ -8,9 +8,11 @@ import { useResumenDashboardQuery } from '../api/dashboardApi';
 /**
  * El resumen del Inicio: a quien cobrarle, como viene el mes y que paso ultimo.
  *
- * Se re-pide al entrar (`refetchOnMountOrArgChange`): es la pantalla a la que
- * se vuelve despues de cargar un ticket o registrar un pago, y tiene que
- * mostrar los numeros de recien.
+ * El Inicio es un tab y queda montado al cambiar de tab (`popToTopOnBlur` solo
+ * vacia los stacks), asi que `refetchOnMountOrArgChange` alcanza para la
+ * primera entrada y nada mas. Se mantiene al dia porque las mutaciones que
+ * mueven plata o clientes invalidan `{Metrica,'TODAS'}` (ticketsApi, pagosApi,
+ * clientesApi, facturasApi).
  */
 export function useDashboard() {
   const consulta = useResumenDashboardQuery(undefined, { refetchOnMountOrArgChange: true });

@@ -15,23 +15,42 @@ function esErrorRtk(valor: unknown): valor is FetchBaseQueryError | SerializedEr
 /**
  * Error de la API ya masticado para la UI.
  *
- * `detalles` son los errores POR CAMPO que manda el backend en los 400
- * (`{ nombre: "Path 'nombre' is required." }`): van debajo del input que
- * corresponde, no en el cartel general.
+ * Regla del cuerpo de error (K11): los mensajes POR CAMPO viven solo en
+ * `detalles.campos` (`{ dni: 'El DNI tiene que tener 7 u 8 números' }`) y van
+ * debajo del input que corresponde, no en el cartel general. Todo lo demás de
+ * `detalles` son datos para la pantalla (la deuda, los usos de una especie,
+ * los pagos a anular), no mensajes: por eso van aparte, en `datos`.
  */
 export type ErrorApi = {
   /** Mensaje listo para mostrarle a una persona. */
   mensaje: string;
   /** Codigo HTTP, o null si la request ni salio (sin red, servidor apagado). */
   status: number | null;
-  /** Errores por campo, cuando el backend los manda. */
-  detalles: Record<string, string> | null;
+  /**
+   * Código estable para decidir sin leer mensajes: el que manda el back
+   * (`SALDO_NEGATIVO`, `IDEMPOTENCIA_CONFLICTO`…) o uno del front para los
+   * errores sin respuesta (`FETCH_ERROR`, `TIMEOUT_ERROR`, `PARSING_ERROR`,
+   * `RESPUESTA_INESPERADA`).
+   */
+  codigo: string | null;
+  /** Mensajes por campo. La clave es la ruta de React Hook Form (`items.0.precioUnitario`). */
+  campos: Record<string, string> | null;
+  /** El resto de `detalles`, sin `campos`: datos estructurados, no mensajes. */
+  datos: Record<string, unknown> | null;
   /** Segundos a esperar. Solo en un 429, del header `Retry-After`. */
   reintentarEn: number | null;
 };
 
 /**
- * El backend responde los errores como `{ error, detalles?, stack? }`
+ * Cuando la respuesta llegó pero no tiene la forma que esperamos, el servidor
+ * ya pudo haber guardado. Por eso no se dice "falló": se pide mirar la cuenta
+ * antes de reintentar.
+ */
+const MENSAJE_RESPUESTA_INESPERADA =
+  'El servidor respondió algo inesperado. Revisá la cuenta antes de volver a intentar.';
+
+/**
+ * El backend responde los errores como `{ error, codigo?, detalles?, stack? }`
  * (ver `middleware/errorHandler.ts`). El `stack` solo llega en 500 fuera de
  * produccion y se ignora a proposito.
  */
@@ -44,17 +63,49 @@ function mensajeDelCuerpo(data: unknown): string | null {
   return null;
 }
 
-/** Solo nos quedamos con los pares campo → motivo que sean texto. */
-function detallesDelCuerpo(data: unknown): Record<string, string> | null {
-  if (!data || typeof data !== 'object' || !('detalles' in data)) return null;
+/** Un objeto plano (no array): la forma de `detalles` y de `detalles.campos`. */
+function esObjeto(valor: unknown): valor is Record<string, unknown> {
+  return typeof valor === 'object' && valor !== null && !Array.isArray(valor);
+}
 
-  const { detalles } = data as { detalles: unknown };
-  if (!detalles || typeof detalles !== 'object' || Array.isArray(detalles)) return null;
+/** El `detalles` del cuerpo, si es un objeto. */
+function detallesDe(data: unknown): Record<string, unknown> | null {
+  if (!esObjeto(data)) return null;
+  const { detalles } = data;
+  return esObjeto(detalles) ? detalles : null;
+}
 
-  const limpios = Object.entries(detalles).filter(
+/**
+ * Los mensajes por campo: SOLO `detalles.campos`, y de ahí solo los pares
+ * ruta → motivo que sean texto. Un dato suelto de `detalles` (la deuda, los
+ * métodos válidos) nunca se confunde con el error de un input.
+ */
+function camposDelCuerpo(data: unknown): Record<string, string> | null {
+  const campos = detallesDe(data)?.campos;
+  if (!esObjeto(campos)) return null;
+
+  const limpios = Object.entries(campos).filter(
     (par): par is [string, string] => typeof par[1] === 'string',
   );
   return limpios.length > 0 ? Object.fromEntries(limpios) : null;
+}
+
+/** El resto de `detalles` sin `campos`: los datos que la pantalla puede usar. */
+function datosDelCuerpo(data: unknown): Record<string, unknown> | null {
+  const detalles = detallesDe(data);
+  if (!detalles) return null;
+
+  const datos = Object.fromEntries(
+    Object.entries(detalles).filter(([clave]) => clave !== 'campos'),
+  );
+  return Object.keys(datos).length > 0 ? datos : null;
+}
+
+/** El `codigo` estable del back, si vino. */
+function codigoDelCuerpo(data: unknown): string | null {
+  if (!esObjeto(data)) return null;
+  const { codigo } = data;
+  return typeof codigo === 'string' && codigo.trim() !== '' ? codigo : null;
 }
 
 /** Lo inyecta el baseQuery leyendo el header `Retry-After` de la respuesta. */
@@ -84,7 +135,9 @@ export function interpretarError(error: ErrorRtk | unknown): ErrorApi | null {
     return {
       mensaje: 'Ocurrio un error inesperado.',
       status: null,
-      detalles: null,
+      codigo: null,
+      campos: null,
+      datos: null,
       reintentarEn: null,
     };
   }
@@ -95,30 +148,45 @@ export function interpretarError(error: ErrorRtk | unknown): ErrorApi | null {
         return {
           mensaje: 'No pudimos conectarnos con el servidor. Revisa tu conexion.',
           status: null,
-          detalles: null,
+          codigo: 'FETCH_ERROR',
+          campos: null,
+          datos: null,
           reintentarEn: null,
         };
       case 'TIMEOUT_ERROR':
         return {
           mensaje: 'El servidor tardo demasiado en responder. Proba de nuevo.',
           status: null,
-          detalles: null,
+          codigo: 'TIMEOUT_ERROR',
+          campos: null,
+          datos: null,
           reintentarEn: null,
         };
       case 'PARSING_ERROR':
         return {
           mensaje: 'El servidor respondio algo que no entendimos.',
           status: null,
-          detalles: null,
+          codigo: 'PARSING_ERROR',
+          campos: null,
+          datos: null,
           reintentarEn: null,
         };
-      case 'CUSTOM_ERROR':
+      case 'CUSTOM_ERROR': {
+        // Incluye el de `catchSchemaFailure` en las mutaciones de plata: la
+        // respuesta llegó (y se guardó) pero no pasó el schema.
+        const codigo = codigoDelCuerpo(error.data);
         return {
-          mensaje: mensajeDelCuerpo(error.data) ?? 'Ocurrio un error inesperado.',
+          mensaje:
+            codigo === 'RESPUESTA_INESPERADA'
+              ? MENSAJE_RESPUESTA_INESPERADA
+              : (mensajeDelCuerpo(error.data) ?? 'Ocurrio un error inesperado.'),
           status: null,
-          detalles: null,
+          codigo,
+          campos: null,
+          datos: null,
           reintentarEn: null,
         };
+      }
       default:
         break;
     }
@@ -126,7 +194,6 @@ export function interpretarError(error: ErrorRtk | unknown): ErrorApi | null {
     // A esta altura `status` es un codigo HTTP.
     const status = typeof error.status === 'number' ? error.status : null;
     const { data } = error as { data?: unknown };
-    const detalles = detallesDelCuerpo(data);
     const reintentarEn = reintentarDelCuerpo(data);
     const delCuerpo = mensajeDelCuerpo(data);
 
@@ -134,7 +201,7 @@ export function interpretarError(error: ErrorRtk | unknown): ErrorApi | null {
     // plan B para cuando no llega ninguno.
     let mensaje = delCuerpo;
     if (!mensaje) {
-      if (status === 401) mensaje = 'Email o contrasena incorrectos.';
+      if (status === 401) mensaje = 'Email o contraseña incorrectos.';
       else if (status === 403) mensaje = 'No tenes permiso para hacer esto.';
       else if (status === 404) mensaje = 'No encontramos lo que buscabas.';
       else if (status === 409) mensaje = 'Ese email ya esta registrado.';
@@ -152,14 +219,35 @@ export function interpretarError(error: ErrorRtk | unknown): ErrorApi | null {
       mensaje = `${mensaje} Proba de nuevo ${enCuantoTiempo(reintentarEn)}.`;
     }
 
-    return { mensaje, status, detalles, reintentarEn };
+    return {
+      mensaje,
+      status,
+      codigo: codigoDelCuerpo(data),
+      campos: camposDelCuerpo(data),
+      datos: datosDelCuerpo(data),
+      reintentarEn,
+    };
   }
 
-  // SerializedError: incluye lo que tire Zod al validar la respuesta.
+  // SerializedError. Si es un ZodError, la respuesta no tuvo la forma
+  // esperada: su `message` es el JSON de los issues y no se le muestra a nadie.
+  const { name, message } = error as SerializedError;
+  if (name === 'ZodError' || name === '$ZodError') {
+    return {
+      mensaje: MENSAJE_RESPUESTA_INESPERADA,
+      status: null,
+      codigo: 'RESPUESTA_INESPERADA',
+      campos: null,
+      datos: null,
+      reintentarEn: null,
+    };
+  }
   return {
-    mensaje: (error as SerializedError).message ?? 'Ocurrio un error inesperado.',
+    mensaje: message ?? 'Ocurrio un error inesperado.',
     status: null,
-    detalles: null,
+    codigo: null,
+    campos: null,
+    datos: null,
     reintentarEn: null,
   };
 }
@@ -167,4 +255,18 @@ export function interpretarError(error: ErrorRtk | unknown): ErrorApi | null {
 /** Atajo para cuando la pantalla solo necesita el texto. */
 export function mensajeDeError(error: ErrorRtk | unknown): string | null {
   return interpretarError(error)?.mensaje ?? null;
+}
+
+/**
+ * La request pudo haber llegado y guardado aunque no tengamos la respuesta:
+ * sin red a mitad de camino, el tope de tiempo, o un proxy que devolvió HTML.
+ * En tickets y pagos el reintento con la misma clave de idempotencia no
+ * duplica, así que el hook puede decir "tocá de nuevo" sin miedo.
+ */
+export function quedoEnDuda(error: ErrorApi | null): boolean {
+  return (
+    error?.codigo === 'FETCH_ERROR' ||
+    error?.codigo === 'TIMEOUT_ERROR' ||
+    error?.codigo === 'PARSING_ERROR'
+  );
 }

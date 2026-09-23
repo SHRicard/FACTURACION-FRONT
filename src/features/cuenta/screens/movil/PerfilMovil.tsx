@@ -16,6 +16,7 @@ import { useEliminarCuenta, usePerfil } from '../../hooks';
 const NOMBRE_ROL: Record<Rol, string> = {
   administrador: 'Administrador',
   super_admin: 'Super administrador',
+  desconocido: 'Desconocido',
 };
 
 const NOMBRE_PROVEEDOR: Record<Proveedor, string> = {

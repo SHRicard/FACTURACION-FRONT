@@ -51,15 +51,24 @@ export function TicketFormMovil() {
   const { ticketId } = params;
   const clienteId = params.clienteId ?? params.id;
   const labelVolver = params.clienteId ? 'Factura' : 'Cliente';
+  // Se entro desde la factura: "Ver la factura" vuelve en vez de apilarla.
+  const desdeFactura = Boolean(params.clienteId);
   const router = useRouter();
   const theme = useTheme();
   const styles = createStyles(theme);
 
   const ficha = useCliente(clienteId);
   const especies = useEspeciesActivas();
-  const facturaAbiertaId = ficha.cliente?.facturaAbierta?.id;
-  const ticket = useGuardarTicket({ clienteId, ticketId, facturaAbiertaId });
-  const anulacion = useAnularTicket(ticketId, clienteId);
+  const ticket = useGuardarTicket({ clienteId, ticketId, cliente: ficha.cliente, desdeFactura });
+  const anulacion = useAnularTicket({
+    ticketId,
+    clienteId,
+    factura: ticket.facturaEnCurso,
+    faltante: ticket.ticket?.faltante ?? 0,
+    desdeFactura,
+    // Anular cierra el formulario: esa salida no pregunta "¿Descartar?".
+    antesDeSalir: ticket.permitirSalida,
+  });
 
   // Los subtotales se recalculan en cada tecla, asi que se miran desde aca y
   // bajan por props: un `useWatch` por renglon redibujaria de mas.
@@ -93,6 +102,41 @@ export function TicketFormMovil() {
   }
 
   /*
+   * Corrigiendo, la ficha es la que dice si el ticket se puede tocar (su
+   * factura sigue abierta). Si no llego, no se sabe: decir "ya esta cerrado"
+   * seria mentir, asi que se ofrece reintentar.
+   */
+  if (ticket.esEdicion && !ficha.cliente) {
+    return (
+      <Pantalla titulo={titulo} ancho="formulario" onVolver={volver} labelVolver={labelVolver}>
+        <EstadoVacio
+          titulo={
+            ficha.noExiste ? 'Este cliente no existe' : 'No pudimos traer la cuenta del cliente'
+          }
+          descripcion={ficha.error ?? undefined}
+          accion={<Button label="Reintentar" variant="secondary" onPress={ficha.reintentar} />}
+        />
+      </Pantalla>
+    );
+  }
+
+  /*
+   * La lista de especies no llego (sin red, error del servidor). No es lo
+   * mismo que no tener ninguna: mandar a crear una que ya existe confunde.
+   */
+  if (especies.falloLaCarga) {
+    return (
+      <Pantalla titulo={titulo} ancho="formulario" onVolver={volver} labelVolver={labelVolver}>
+        <EstadoVacio
+          titulo="No pudimos traer las especies"
+          descripcion={especies.error ?? undefined}
+          accion={<Button label="Reintentar" variant="secondary" onPress={especies.reintentar} />}
+        />
+      </Pantalla>
+    );
+  }
+
+  /*
    * Sin especies no se puede cargar un ticket: cada renglon necesita una. En
    * vez de un selector vacio —que no le dice a nadie que primero hay que crear
    * una— se manda derecho a la pantalla donde se crean.
@@ -105,7 +149,12 @@ export function TicketFormMovil() {
           titulo="Primero cargá una especie"
           descripcion="Cada renglón del ticket necesita un tipo de mercadería: Pantalón, Zapatilla. Son dos campos y se cargan una sola vez."
           accion={
-            <Button label="Ir a Especies" onPress={() => router.push('/admin/cuenta/especies')} />
+            // `withAnchor`: Especies vive en otro tab, y sin el ancla "atras"
+            // desde ahi no tendria el menu de Mas debajo.
+            <Button
+              label="Ir a Especies"
+              onPress={() => router.push('/admin/cuenta/especies', { withAnchor: true })}
+            />
           }
         />
       </Pantalla>
@@ -137,17 +186,8 @@ export function TicketFormMovil() {
   }
 
   const resultado = ticket.resultado;
-
-  /*
-   * El vencimiento se acuerda con el PRIMER ticket de la factura: despues ya
-   * esta fijado y se cambia desde la factura. La ficha trae la factura en curso,
-   * asi que para saberlo no hace falta otra request.
-   */
-  const facturaEnCurso = ficha.cliente?.facturaAbierta;
-  const eligeVencimiento =
-    !ticket.esEdicion &&
-    ficha.cliente != null &&
-    (!facturaEnCurso || facturaEnCurso.cantidadTickets === 0);
+  // Si se elige el vencimiento y a que factura se suma lo decide el hook (K15).
+  const facturaQueSigue = ticket.facturaQueSigue;
   const ventanaPago = ficha.cliente
     ? formatearVentanaPago(ficha.cliente.ventanaPago.desdeDia, ficha.cliente.ventanaPago.hastaDia)
     : '';
@@ -237,13 +277,13 @@ export function TicketFormMovil() {
             onPagarTodo={ticket.pagarTodo}
           />
 
-          {eligeVencimiento ? (
+          {ticket.eligeVencimiento ? (
             <CampoVencimiento control={ticket.form.control} ventanaPago={ventanaPago} />
-          ) : !ticket.esEdicion && facturaEnCurso ? (
-            // Ya tiene tickets: la fecha quedo fijada con el primero.
+          ) : facturaQueSigue ? (
+            // La fecha ya quedo fijada: con el primer ticket o reprogramando.
             <Text variant="caption" tone="muted">
-              Se suma a su factura en curso, que {facturaEnCurso.vencida ? 'venció' : 'vence'} el{' '}
-              {formatearFecha(facturaEnCurso.venceEl) ?? 'día acordado'}.
+              Se suma a su factura en curso, que {facturaQueSigue.vencida ? 'venció' : 'vence'} el{' '}
+              {formatearFecha(facturaQueSigue.venceEl) ?? 'día acordado'}.
             </Text>
           ) : null}
 
@@ -253,6 +293,12 @@ export function TicketFormMovil() {
             <Text variant="caption" tone="error">
               {ticket.error ?? anulacion.error}
             </Text>
+          ) : null}
+
+          {/* Lo pagado a cuenta no deja achicar o anular el ticket (K2): el
+              arreglo es anular el pago, y eso se hace desde la factura. */}
+          {ticket.saldoNegativo || anulacion.saldoNegativo ? (
+            <Button label="Ver la factura" variant="secondary" onPress={ticket.verLaFactura} />
           ) : null}
 
           {/* Un solo boton a lo ancho: para irse sin guardar esta la flecha de
@@ -295,16 +341,25 @@ export function TicketFormMovil() {
       </KeyboardAvoidingView>
 
       {/*
-        Solo aparece cuando hay algo que contar: el limite superado. Si no, se
+        Solo aparece cuando hay algo que contar: el limite superado, o que el
+        ticket ya se habia cargado (un reintento con mala señal). Si no, se
         vuelve derecho a la ficha.
       */}
       <Modal
         visible={resultado !== null}
         onClose={ticket.cerrarResultado}
-        titulo={ticket.esEdicion ? 'Ticket corregido' : 'Ticket guardado'}
+        titulo={
+          resultado?.repetido
+            ? 'Este ticket ya se había cargado'
+            : ticket.esEdicion
+              ? 'Ticket corregido'
+              : 'Ticket guardado'
+        }
         descripcion={
           resultado
-            ? `Quedó debiendo ${formatearMoneda(resultado.faltante)} de este ticket. Su factura en curso va ${formatearMoneda(resultado.saldo)}.`
+            ? resultado.repetido
+              ? `No se cargó de nuevo: quedó el que ya estaba. Su factura en curso va ${formatearMoneda(resultado.saldo)}.`
+              : `Quedó debiendo ${formatearMoneda(resultado.faltante)} de este ticket. Su factura en curso va ${formatearMoneda(resultado.saldo)}.`
             : undefined
         }
         acciones={<Button label="Ver la cuenta" onPress={ticket.cerrarResultado} />}
@@ -341,11 +396,23 @@ export function TicketFormMovil() {
               label="Anular"
               variant="danger"
               loading={anulacion.anulando}
+              // Si lo pagado a cuenta supera lo que queda fiado, no se puede (K2).
+              disabled={anulacion.aviso?.tipo === 'bloquea'}
               onPress={anulacion.confirmar}
             />
           </>
         }
       >
+        {anulacion.aviso ? (
+          <View style={styles.avisoAnular}>
+            <Text variant="caption" tone={anulacion.aviso.tipo === 'bloquea' ? 'warning' : 'muted'}>
+              {anulacion.aviso.texto}
+            </Text>
+            {anulacion.aviso.tipo === 'bloquea' ? (
+              <Button label="Ver la factura" variant="secondary" onPress={anulacion.verLaFactura} />
+            ) : null}
+          </View>
+        ) : null}
         <View style={styles.motivo}>
           <Text variant="caption" tone="muted">
             Motivo (opcional)
@@ -362,6 +429,24 @@ export function TicketFormMovil() {
           </Text>
         </View>
       </Modal>
+
+      {/*
+        Salir con la flecha, el gesto o el boton atras con algo cargado sin
+        guardar pregunta antes de tirarlo (U5). Cambiar de tab no pregunta: el
+        ticket queda donde estaba.
+      */}
+      <Modal
+        visible={ticket.salida.preguntando}
+        onClose={ticket.salida.seguir}
+        titulo={ticket.esEdicion ? '¿Descartar los cambios?' : '¿Descartar el ticket?'}
+        descripcion="Lo que cargaste todavía no se guardó. Si salís ahora, se pierde."
+        acciones={
+          <>
+            <Button label="Seguir cargando" variant="ghost" onPress={ticket.salida.seguir} />
+            <Button label="Descartar" variant="danger" onPress={ticket.salida.descartar} />
+          </>
+        }
+      />
     </Pantalla>
   );
 }
@@ -412,4 +497,5 @@ const createStyles = (theme: Theme) =>
       backgroundColor: theme.colors.surface,
     },
     motivo: { gap: theme.spacing.xs },
+    avisoAnular: { gap: theme.spacing.sm },
   });

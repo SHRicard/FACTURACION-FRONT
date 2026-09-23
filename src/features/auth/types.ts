@@ -48,3 +48,12 @@ export type DatosGoogle = {
   aceptoTerminosYCondiciones?: boolean;
 };
 export type RespuestaSimple = z.infer<typeof respuestaSimpleSchema>;
+
+/**
+ * Aviso de una sola vez que la primera pantalla después de entrar muestra en
+ * un diálogo. Es una clave y no el texto: el texto vive en `useAvisoSesion`.
+ *
+ *   'google-vinculada' → entró con Google sobre una cuenta con contraseña; el
+ *                        back invalidó la contraseña anterior (K13).
+ */
+export type AvisoSesion = 'google-vinculada';

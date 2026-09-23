@@ -84,8 +84,16 @@ export const cambiarPasswordSchema = z
 
 // ─────────────────── Respuestas de la API ───────────────────
 
-/** Los roles que asigna el backend. `administrador` es el de toda cuenta nueva. */
-export const rolSchema = z.enum(['administrador', 'super_admin']);
+/**
+ * Los roles que asigna el backend. `administrador` es el de toda cuenta nueva.
+ *
+ * 'desconocido' es lo que esta versión no sabe manejar: un rol nuevo del
+ * backend no rompe el parseo de la sesión, cae acá y manda a /actualizar-app
+ * (ver `rutas.ts`, K8).
+ */
+export const rolSchema = z
+  .enum(['administrador', 'super_admin', 'desconocido'])
+  .catch('desconocido');
 
 /** Como se creo la cuenta. `local` = email + contrasena. */
 export const proveedorSchema = z.enum(['local', 'google']);
@@ -96,6 +104,8 @@ export const proveedorSchema = z.enum(['local', 'google']);
  *   'perfil'   → cargar el DNI
  *   'marca'    → crear su marca, o que un dueno lo sume con su DNI
  *   null       → nada: entra
+ *   'desconocido' → un paso nuevo del backend que esta versión no sabe
+ *                   manejar: manda a /actualizar-app (ver `rutas.ts`, K8)
  *
  * Viene en toda sesion (login, registro, Google, `/auth/me`) y en los 403 de
  * las rutas del negocio (`detalles.pendiente`). Con esto el front sabe a que
@@ -105,7 +115,10 @@ export const proveedorSchema = z.enum(['local', 'google']);
  * nada del negocio, el backend responde 403 a todo. Pasan a pendiente solos
  * cuando el texto legal cambia de version, asi que no es solo del alta.
  */
-export const pendienteSchema = z.enum(['terminos', 'perfil', 'marca']).nullable();
+export const pendienteSchema = z
+  .enum(['terminos', 'perfil', 'marca', 'desconocido'])
+  .nullable()
+  .catch('desconocido');
 
 /**
  * Usuario tal como lo serializa el backend (`usuario.toJSON()`).
@@ -123,8 +136,9 @@ export const usuarioSchema = z
     email: z.email(),
     rol: rolSchema,
     // Solo existen en cuentas de Google, por eso son opcionales: una cuenta
-    // creada con email + contrasena no los trae.
-    proveedor: proveedorSchema.optional(),
+    // creada con email + contrasena no los trae. Un proveedor nuevo del
+    // backend se lee como ausente en vez de romper la sesión (K8).
+    proveedor: proveedorSchema.optional().catch(undefined),
     avatar: z.url().optional(),
     /** Sin puntos. Se carga UNA vez en "Completa tu perfil"; no lo cambia el usuario. */
     dni: z.string().optional(),
@@ -181,8 +195,11 @@ export const respuestaSimpleSchema = z.object({
  *   creada    (201) - primera vez, cuenta nueva
  *   existente (200) - ya se habia logueado con Google
  *   vinculada (200) - tenia cuenta con contrasena y se le sumo Google
+ *
+ * Un caso nuevo del backend se lee como 'existente': es el que no dispara
+ * ningún aviso (K8).
  */
-export const casoGoogleSchema = z.enum(['creada', 'existente', 'vinculada']);
+export const casoGoogleSchema = z.enum(['creada', 'existente', 'vinculada']).catch('existente');
 
 export const sesionGoogleSchema = sesionSchema.extend({
   caso: casoGoogleSchema,

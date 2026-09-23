@@ -57,8 +57,11 @@ export const facturasApi = baseApi.injectEndpoints({
      * Listado con scroll infinito.
      *
      * Es una `infiniteQuery`: RTK Query acumula las paginas en una sola entrada de
-     * cache a medida que se scrollea. Al recargar vuelve a la primera pagina
-     * (`refetchCachedPages: false`): una sola request, no una por pagina cargada.
+     * cache a medida que se scrollea. Cuando un tag se invalida (un ticket, un
+     * pago, un cliente renombrado) se vuelven a pedir TODAS las paginas
+     * cargadas: si no, la lista vuelve a 20 filas y se pierde el scroll. El
+     * gesto de tirar para abajo pide solo la primera
+     * (`refetch({ refetchCachedPages: false })` en useFacturas).
      */
     listarFacturas: build.infiniteQuery<PaginaFacturas, FiltrosFacturas, number>({
       infiniteQueryOptions: {
@@ -66,10 +69,10 @@ export const facturasApi = baseApi.injectEndpoints({
         // `undefined` = no hay mas: es lo que apaga el `hasNextPage` del hook.
         getNextPageParam: (ultima) =>
           ultima.pagina < ultima.paginas ? ultima.pagina + 1 : undefined,
-        // Al recargar (tirar para abajo, o un tag invalidado) se pide SOLO la
-        // primera pagina. Sin esto RTK Query re-pide en fila todas las que el
-        // usuario llego a scrollear: 6 requests en vez de 1.
-        refetchCachedPages: false,
+        // Al invalidar un tag se re-piden en fila todas las paginas que el
+        // usuario llego a scrollear (una request por pagina), asi la fila que
+        // cambio se actualiza sin que la lista se achique debajo del dedo.
+        refetchCachedPages: true,
       },
       query: ({ queryArg, pageParam }) => ({ url: `/facturas${armarQuery(queryArg, pageParam)}` }),
       transformResponse: (respuesta: unknown) => paginaFacturasSchema.parse(respuesta),

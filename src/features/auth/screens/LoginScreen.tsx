@@ -1,4 +1,4 @@
-import { Button, CampoControlado } from '@/shared/ui/atoms';
+import { Button, CampoControlado, Text } from '@/shared/ui/atoms';
 
 import { AuthLayout, BotonGoogle, ConsentimientoGoogle, EnlaceAuth } from '../components';
 import { useLogin, useLoginGoogle } from '../hooks';
@@ -8,11 +8,12 @@ import { useLogin, useLoginGoogle } from '../hooks';
  * Sin logica de negocio: todo sale de `useLogin`.
  */
 export function LoginScreen() {
-  const { form, enviar, cargando, error } = useLogin();
+  const { form, enviar, cargando, error, pistaGoogle } = useLogin();
   const google = useLoginGoogle();
 
   return (
     <AuthLayout
+      logo
       titulo="Iniciar sesion"
       subtitulo="Entra con tu cuenta para gestionar tu facturacion."
       error={error}
@@ -23,6 +24,13 @@ export function LoginScreen() {
         </>
       }
     >
+      {/* Va primero: queda justo debajo del cartel de error. */}
+      {pistaGoogle ? (
+        <Text variant="caption" tone="muted">
+          ¿Te registraste con Google? Tocá «Continuar con Google».
+        </Text>
+      ) : null}
+
       <CampoControlado
         control={form.control}
         name="email"
@@ -74,6 +82,7 @@ export function LoginScreen() {
           */}
           <ConsentimientoGoogle
             visible={google.consentimiento.visible}
+            cuenta={google.consentimiento.cuenta}
             valor={google.consentimiento.acepto}
             onCambiar={google.consentimiento.cambiar}
             onAceptar={google.consentimiento.confirmar}

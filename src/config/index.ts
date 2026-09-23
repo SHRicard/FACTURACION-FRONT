@@ -1,3 +1,5 @@
+import Constants from 'expo-constants';
+
 /**
  * Configuracion de la app.
  *
@@ -36,3 +38,14 @@ export const GOOGLE_CLIENT_ID_IOS = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS
  * el proyecto sin tener las credenciales cargadas.
  */
 export const GOOGLE_HABILITADO = GOOGLE_CLIENT_ID_WEB !== '';
+
+/**
+ * La `expo.version` de app.json. Viaja en `X-App-Version` para que el back
+ * pueda exigir una versión mínima (responde 426, K8) y en el reporte de
+ * errores (K12). null si Constants no la trae: sin versión no se manda el
+ * header y el back no bloquea.
+ *
+ * ⚠️ Para poder exigirla, cada release tiene que subir `version`, no solo el
+ * versionCode: si no, todas las builds dicen lo mismo.
+ */
+export const VERSION_APP: string | null = Constants.expoConfig?.version ?? null;

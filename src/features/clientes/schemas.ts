@@ -62,7 +62,13 @@ export const estadoFacturaSchema = z.enum(['abierta', 'pagada', 'anulada']);
 export const facturaAbiertaSchema = z
   .object({
     _id: z.string(),
-    estado: estadoFacturaSchema,
+    /**
+     * El estado que guarda el backend. Los conocidos siguen en
+     * `estadoFacturaSchema`; la respuesta se lee como string para que un estado
+     * nuevo del backend no rompa la ficha (K8). Las pantallas ya comparan con
+     * literales.
+     */
+    estado: z.string(),
     /**
      * Lo que se MUESTRA. Suma "vencida" y "sin deuda", que se calculan por
      * fecha y por saldo y no existen como `estado`. Va como string y no como
@@ -72,9 +78,21 @@ export const facturaAbiertaSchema = z
     estadoVisible: z.string(),
     venceEl: z.string(),
     saldo: z.number(),
+    /**
+     * Lo fiado y lo pagado a cuenta. El back ya los manda (serializarFactura);
+     * con ellos el ticket avisa antes de dejar la factura en negativo (K2).
+     */
+    totalFiado: z.number().default(0),
+    totalPagos: z.number().default(0),
     cantidadTickets: z.number(),
     vencida: z.boolean(),
-    diasParaVencer: z.number(),
+    /** null = sin compras: su fecha es provisoria (K3). */
+    diasParaVencer: z.number().nullable(),
+    /**
+     * El próximo ticket vuelve a fijar el vencimiento: la factura no tiene
+     * tickets o quedó en $0 (K15). Falta con un back viejo.
+     */
+    eligeVencimiento: z.boolean().optional(),
     /** La fecha del primer ticket; no cambia al reprogramar. */
     vencimientoOriginal: z.string().nullish(),
     /** `venceEl` se cambio despues del primer ticket. */
@@ -216,7 +234,8 @@ export const facturaDelHistorialSchema = z
     _id: z.string(),
     /** Se asigna al saldarla: la factura en curso no tiene. */
     numero: z.number().nullish(),
-    estado: estadoFacturaSchema,
+    /** String y no `estadoFacturaSchema`: un estado nuevo no rompe el historial (K8). */
+    estado: z.string(),
     estadoVisible: z.string(),
     desde: z.string().nullish(),
     venceEl: z.string(),

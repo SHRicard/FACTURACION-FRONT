@@ -231,7 +231,9 @@ export const frecuenciaClienteSchema = z.object({
   diasEntreCompras: z.number().nullable(),
   diasDesdeUltima: z.number(),
   proximaCompra: z.string().nullable(),
-  estado: estadoFrecuenciaSchema,
+  // Un estado nuevo del backend se muestra como 'sin-historial', el único que
+  // no marca nada, en vez de romper la lista (K8).
+  estado: estadoFrecuenciaSchema.catch('sin-historial'),
 });
 
 export const paginaFrecuenciaSchema = z.object({

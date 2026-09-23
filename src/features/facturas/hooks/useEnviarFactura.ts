@@ -7,7 +7,7 @@ import { API_BASE_URL } from '@/config';
 import { useMiMarcaQuery } from '@/features/marcas/api/marcasApi';
 import { headersDeSesion } from '@/services/api';
 import { compartirArchivo } from '@/services/archivos';
-import { interpretarError } from '@/shared/utils';
+import { aplicarDetalles, interpretarError } from '@/shared/utils';
 
 import {
   useDarDeBajaEnlacesMutation,
@@ -162,10 +162,9 @@ export function useEnviarFactura(detalle: FacturaDetalle | undefined) {
       setAviso({ texto: `Listo: se la mandamos a ${envio.para}.`, tono: 'success' });
     } catch (fallo) {
       const error = interpretarError(fallo);
-      // Sin email o mal escrito: va debajo del campo, no en el cartel.
-      if (error?.detalles?.['campo'] === 'email') {
-        form.setError('email', { type: 'server', message: error.mensaje });
-      } else {
+      // Sin email, mal escrito o un mensaje de mas: va debajo de su campo
+      // (`detalles.campos.email` o `.mensaje`), no en el cartel.
+      if (!aplicarDetalles(form, error)) {
         setErrorMail(error?.mensaje ?? 'No pudimos mandarla.');
       }
     }

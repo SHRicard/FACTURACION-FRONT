@@ -3,6 +3,8 @@ import {
   DefaultTheme,
   Stack,
   ThemeProvider as NavigationThemeProvider,
+  usePathname,
+  type ErrorBoundaryProps,
   type Theme as NavigationTheme,
 } from 'expo-router';
 import { NavigationBar } from 'expo-navigation-bar';
@@ -10,17 +12,35 @@ import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
 import { useEffect, useMemo } from 'react';
 
+import { PuertaActualizacion } from '@/features/actualizacion/components';
 import { ArranqueSesion } from '@/features/auth/components';
 import { BotonDesignSystem } from '@/features/design-system/components';
+import { PantallaError } from '@/features/errores/components';
 import { AppProviders } from '@/providers';
+import { instalarReporteGlobal, recordarRuta } from '@/services/errores';
 import { useTheme, useThemeMode } from '@/theme';
+
+// Los errores JS que pasan fuera del render (un onPress, un timer) no llegan al
+// ErrorBoundary: los atrapa el handler global, que también los reporta (K12).
+instalarReporteGlobal();
 
 /**
  * Si algo revienta al renderizar, expo-router muestra ESTA pantalla de error en
  * vez de dejarte mirando el splash. Sin esto, cualquier throw en el arbol se ve
- * como una pantalla del color del splash (#208AEF) sin ninguna pista.
+ * como una pantalla del color del splash sin ninguna pista.
+ *
+ * Es propia (en español, y reporta el error al back, K12) y no la de
+ * expo-router. El boundary del layout RAÍZ reemplaza al layout entero,
+ * providers incluidos (expo-router, useScreens.js l.156-165): por eso vuelve a
+ * montar AppProviders. Sin ellos, useTheme() tira adentro del propio cartel.
  */
-export { ErrorBoundary } from 'expo-router';
+export function ErrorBoundary(props: ErrorBoundaryProps) {
+  return (
+    <AppProviders>
+      <PantallaError {...props} />
+    </AppProviders>
+  );
+}
 
 // A proposito NO se llama a SplashScreen.preventAutoHideAsync(): no hay ninguna
 // carga asincronica que esperar (MMKV es sincrono, el theme se resuelve en el
@@ -46,6 +66,12 @@ export default function RootLayout() {
 function RootNavigator() {
   const theme = useTheme();
   const { colorScheme } = useThemeMode();
+  const ruta = usePathname();
+
+  // Para que el handler global sepa en qué pantalla estaba la persona.
+  useEffect(() => {
+    recordarRuta(ruta);
+  }, [ruta]);
 
   // El chrome del navegador (headers, fondos, transiciones) toma los mismos
   // tokens semanticos que el resto de la app: cero colores hardcodeados.
@@ -95,6 +121,11 @@ function RootNavigator() {
       </ArranqueSesion>
       {/* Flota por encima de toda la app. Solo en __DEV__. */}
       <BotonDesignSystem />
+      {/*
+        Versión mínima (K8). Es HERMANO del Stack y lo tapa sin desmontarlo:
+        así no se pierde el historial cuando la app vuelve a quedar al día.
+      */}
+      <PuertaActualizacion />
     </NavigationThemeProvider>
   );
 }

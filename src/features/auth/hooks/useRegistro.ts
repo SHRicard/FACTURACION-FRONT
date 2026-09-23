@@ -52,7 +52,7 @@ export function useRegistro() {
       abrirSesion(sesion);
       router.replace('/');
     } catch (fallo) {
-      aplicarDetalles(form, interpretarError(fallo)?.detalles ?? null);
+      aplicarDetalles(form, interpretarError(fallo));
     }
   });
 

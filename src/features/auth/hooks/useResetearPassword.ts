@@ -39,7 +39,7 @@ export function useResetearPassword(token: string | null) {
       abrirSesion(sesion);
       router.replace('/');
     } catch (fallo) {
-      aplicarDetalles(form, interpretarError(fallo)?.detalles ?? null);
+      aplicarDetalles(form, interpretarError(fallo));
     }
   });
 

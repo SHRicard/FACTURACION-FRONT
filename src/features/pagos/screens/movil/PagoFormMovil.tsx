@@ -62,7 +62,12 @@ export function PagoFormMovil() {
 
   // A una factura: su saldo. Al cliente: la deuda total de la ficha.
   const deuda = facturaId ? (cuenta.detalle?.factura.saldo ?? 0) : (ficha.cliente?.deuda ?? 0);
-  const pago = useRegistrarPago({ clienteId, facturaId, deuda });
+  const pago = useRegistrarPago({
+    clienteId,
+    facturaId,
+    deuda,
+    estadoFactura: cuenta.detalle?.factura.estado,
+  });
 
   const volver = () => router.back();
   // El mismo titulo por las dos puertas: a que factura va lo dice la bajada,
@@ -92,14 +97,13 @@ export function PagoFormMovil() {
   }
 
   const factura = cuenta.detalle?.factura;
-  // Solo la factura en curso recibe pagos: una pagada o anulada no.
-  const facturaRecibe = !factura || factura.estado === 'abierta';
 
   /*
    * Sin deuda no hay nada que cobrar. El backend lo rechazaria con un 400; aca
    * se dice antes, en vez de dejar llenar un formulario que no se va a guardar.
+   * Lo decide el hook: con el comprobante a la vista no se reemplaza.
    */
-  if (deuda <= 0 || !facturaRecibe) {
+  if (pago.nadaQueCobrar) {
     return (
       <Pantalla titulo={titulo} ancho="formulario" onVolver={volver} labelVolver={labelVolver}>
         <EstadoVacio
@@ -156,7 +160,7 @@ export function PagoFormMovil() {
                 valor={value}
                 onCambiar={onChange}
                 onBlur={onBlur}
-                deuda={deuda}
+                deuda={pago.deuda}
                 quedaDebiendo={pago.quedaDebiendo}
                 onTodo={pago.pagarTodo}
                 error={error?.message ?? (pago.excede ? pago.mensajeExcede : undefined)}
@@ -213,9 +217,10 @@ export function PagoFormMovil() {
 
       {/* El comprobante: dejo, debia, queda. Es lo que se le dice al cliente. */}
       <Modal
-        visible={comprobante !== null}
+        visible={pago.comprobanteAbierto}
         onClose={pago.cerrarComprobante}
-        titulo="Pago registrado"
+        // Un reintento con mala señal que ya habia llegado: no se cobro dos veces.
+        titulo={pago.repetido ? 'Este cobro ya se había registrado' : 'Pago registrado'}
         descripcion={
           comprobante
             ? `Dejó ${formatearMoneda(comprobante.entrega.monto)} · debía ${formatearMoneda(comprobante.entrega.saldoAnterior)} · queda ${formatearMoneda(comprobante.entrega.saldoPosterior)}.`

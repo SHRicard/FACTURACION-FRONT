@@ -86,9 +86,14 @@ export function useFacturas() {
     if (consulta.hasNextPage && !consulta.isFetchingNextPage) void fetchNextPage();
   }, [consulta.hasNextPage, consulta.isFetchingNextPage, fetchNextPage]);
 
-  /** Para el gesto de tirar para abajo. Devuelve la promesa a proposito. */
+  /**
+   * Para el gesto de tirar para abajo. Devuelve la promesa a proposito.
+   *
+   * El gesto pide solo la primera pagina, como antes; la invalidacion por tags
+   * (un ticket, un pago) pide todas las cargadas, para no perder el scroll.
+   */
   const refrescar = useCallback(async () => {
-    await refetch();
+    await refetch({ refetchCachedPages: false });
   }, [refetch]);
 
   return {

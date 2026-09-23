@@ -17,10 +17,16 @@ import type { FacturaAbierta } from '../types';
  *
  * La version corta de `shared/utils` es para una fila de lista; aca hay lugar
  * para el dia exacto, que es lo que se mira cuando se tiene al cliente delante.
+ *
+ * Sin compras la fecha es provisoria y no se muestra (K3). Una fecha pasada
+ * sin estar vencida ("sin deuda") dice "Vencio el", nunca "Vence en -3 dias".
  */
 function textoVencimiento(factura: FacturaAbierta): string {
+  if (factura.estadoVisible === 'sin compras' || factura.diasParaVencer === null) {
+    return 'Todavía no se llevó nada';
+  }
   const fecha = formatearFecha(factura.venceEl) ?? 'sin fecha';
-  if (factura.vencida) return `Vencio el ${fecha}`;
+  if (factura.vencida || factura.diasParaVencer < 0) return `Vencio el ${fecha}`;
   if (factura.diasParaVencer === 0) return `Vence hoy, ${fecha}`;
   if (factura.diasParaVencer === 1) return `Vence manana, ${fecha}`;
   return `Vence en ${factura.diasParaVencer} dias, el ${fecha}`;

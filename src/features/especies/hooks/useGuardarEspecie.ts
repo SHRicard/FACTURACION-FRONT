@@ -95,7 +95,7 @@ export function useGuardarEspecie() {
       setAbierto(false);
     } catch (fallo) {
       const error = interpretarError(fallo);
-      aplicarDetalles(form, error?.detalles ?? null);
+      aplicarDetalles(form, error);
 
       // El 409 es "ya tenes una especie con ese nombre": va bajo el campo
       // nombre, no en el cartel de arriba, que es donde nadie lo relaciona con
@@ -121,9 +121,9 @@ export function useGuardarEspecie() {
     enviar,
     guardando: estadoCrear.isLoading || estadoEditar.isLoading,
     /**
-     * El 400 con detalles y el 409 ya se muestran bajo su campo: repetirlos
+     * El 400 con campos y el 409 ya se muestran bajo su campo: repetirlos
      * arriba hace que la persona lea el mismo texto dos veces.
      */
-    error: error && !error.detalles && error.status !== 409 ? error.mensaje : null,
+    error: error && !error.campos && error.status !== 409 ? error.mensaje : null,
   };
 }

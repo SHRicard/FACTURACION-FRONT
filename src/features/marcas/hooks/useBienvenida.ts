@@ -6,7 +6,7 @@ import { useLazyUsuarioActualQuery } from '@/features/auth/api/authApi';
 import { pendienteActualizado, sesionRestaurada } from '@/features/auth/store/authSlice';
 import { baseApi } from '@/services/api';
 import type { ImagenElegida } from '@/services/imagenes';
-import { interpretarError } from '@/shared/utils';
+import { aplicarDetalles, interpretarError } from '@/shared/utils';
 import { useAppDispatch } from '@/store';
 
 import { useCompletarPerfilMutation, useCrearMarcaMutation } from '../api/marcasApi';
@@ -54,9 +54,10 @@ export function useCompletarPerfil() {
       dispatch(sesionRestaurada(respuesta));
     } catch (fallo) {
       // 400 (DNI mal escrito) y 409 (ya lo tiene otra cuenta) son del campo:
-      // van debajo del DNI, no en el cartel de arriba.
+      // van debajo del DNI, no en el cartel de arriba. El back lo nombra en
+      // `detalles.campos`; si no lo nombra, igual va al DNI, el unico campo.
       const detalle = interpretarError(fallo);
-      if (detalle?.status === 400 || detalle?.status === 409) {
+      if (!aplicarDetalles(form, detalle) && (detalle?.status === 400 || detalle?.status === 409)) {
         form.setError('dni', { type: 'server', message: detalle.mensaje });
       }
     }
@@ -78,20 +79,6 @@ interface LogoFallido {
   /** False si el server no tiene Cloudinary: reintentar no serviria. */
   reintentable: boolean;
 }
-
-/** Los campos del alta que el backend puede nombrar en `detalles.campo`. */
-const CAMPOS_DEL_ALTA = [
-  'nombre',
-  'direccion',
-  'telefono',
-  'colorPrimario',
-  'colorSecundario',
-] as const;
-
-type CampoDelAlta = (typeof CAMPOS_DEL_ALTA)[number];
-
-const esCampoDelAlta = (campo: unknown): campo is CampoDelAlta =>
-  CAMPOS_DEL_ALTA.includes(campo as CampoDelAlta);
 
 /**
  * Paso 2, camino A: crear la marca propia, con su logo y sus colores.
@@ -169,13 +156,9 @@ export function useCrearMarca() {
         }
         await subirLogoYEntrar(logo);
       } catch (fallo) {
-        const detalle = interpretarError(fallo);
         // Un campo muy largo, vacio o un color que no es hex: el backend dice
-        // cual en `detalles.campo`, y va debajo de ese campo.
-        const campo = detalle?.detalles?.['campo'];
-        if (detalle?.status === 400 && esCampoDelAlta(campo)) {
-          form.setError(campo, { type: 'server', message: detalle.mensaje });
-        }
+        // cual en `detalles.campos`, y va debajo de ese campo.
+        aplicarDetalles(form, interpretarError(fallo));
       }
     },
     [crear, logo, entrar, subirLogoYEntrar, form],
@@ -253,7 +236,8 @@ export function useCrearMarca() {
     nombre,
     colores,
     cargando: creando || fase !== 'quieto',
-    error: detalle && !esCampoDelAlta(detalle.detalles?.['campo']) ? detalle.mensaje : null,
+    // Lo que el back marco por campo ya se ve debajo de ese campo.
+    error: detalle && !detalle.campos ? detalle.mensaje : null,
     logo: {
       uri: logo?.uri ?? null,
       elegir: elegirLogo,

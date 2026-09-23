@@ -24,6 +24,7 @@ function ModalComponent({
   descripcion,
   children,
   acciones,
+  accionesApiladas = false,
   cerrarAlTocarFondo = true,
   mostrarCerrar = true,
 }: ModalProps) {
@@ -90,7 +91,11 @@ function ModalComponent({
 
             {children}
 
-            {acciones ? <View style={styles.acciones}>{acciones}</View> : null}
+            {acciones ? (
+              <View style={[styles.acciones, accionesApiladas && styles.accionesApiladas]}>
+                {acciones}
+              </View>
+            ) : null}
           </View>
         </KeyboardAvoidingView>
       </View>

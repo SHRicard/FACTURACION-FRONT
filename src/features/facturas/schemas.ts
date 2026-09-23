@@ -38,7 +38,14 @@ const camposFactura = {
    * tiene numero, y puede llegar como null o directamente sin la clave.
    */
   numero: z.number().nullish(),
-  estado: estadoFacturaSchema,
+  /**
+   * El estado que guarda el backend. Los conocidos siguen en
+   * `estadoFacturaSchema`, que tipa el filtro que manda el front
+   * (`FiltrosFacturas.estado`); la respuesta se lee como string para que un
+   * estado nuevo del backend no rompa la lista (K8). Las pantallas ya comparan
+   * con literales.
+   */
+  estado: z.string(),
   /**
    * Lo que se MUESTRA. Suma "vencida" y "sin deuda", que se calculan por fecha
    * y por saldo. Va como string y no como enum a proposito: si el backend
@@ -49,8 +56,8 @@ const camposFactura = {
   vencida: z.boolean().default(false),
   desde: z.string().optional(),
   venceEl: z.string(),
-  /** Negativo = dias de atraso. */
-  diasParaVencer: z.number(),
+  /** Negativo = días de atraso; null = sin compras (fecha provisoria, K3). */
+  diasParaVencer: z.number().nullable(),
   cantidadTickets: z.number(),
   totalMercaderia: z.number(),
   totalPagadoEnTickets: z.number(),

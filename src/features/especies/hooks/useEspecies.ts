@@ -27,11 +27,14 @@ export type BorradoPendiente =
   | { paso: 'confirmar'; especie: Especie }
   | { paso: 'enUso'; especie: Especie; mensaje: string; usos: UsosEspecie };
 
-/** Los dos conteos del 400, o cero si el backend no los mando. */
-function usosDelError(detalles: Record<string, string> | null): UsosEspecie {
+/**
+ * Los dos conteos del 400, o cero si el backend no los mando. Son datos de
+ * `detalles` (K11), no mensajes de campo: llegan como numeros.
+ */
+function usosDelError(datos: Record<string, unknown> | null): UsosEspecie {
   const leer = (clave: string) => {
-    const valor = Number(detalles?.[clave]);
-    return Number.isFinite(valor) ? valor : 0;
+    const valor = datos?.[clave];
+    return typeof valor === 'number' && Number.isFinite(valor) ? valor : 0;
   };
   return { tickets: leer('tickets'), productos: leer('productos') };
 }
@@ -115,7 +118,7 @@ export function useEspecies() {
           paso: 'enUso',
           especie,
           mensaje: error.mensaje,
-          usos: usosDelError(error.detalles),
+          usos: usosDelError(error.datos),
         });
         return;
       }

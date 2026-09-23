@@ -63,6 +63,8 @@ export function DashboardMovil() {
    * Morosos, el historial y el perfil viven en el tab "Mas"; la factura y los
    * clientes, en los suyos. `withAnchor` deja la pantalla base de ese tab
    * debajo: sin eso el tab queda con una pantalla suelta y "atras" cae aca.
+   * Tambien vale para el alta: el stack de Clientes queda [lista, nuevo] y,
+   * despues del `replace` al guardar, [lista, ficha].
    */
   const irAMorosos = () => router.push('/admin/cuenta/metricas/morosos', { withAnchor: true });
   const irALaFactura = (id: string) => router.push(`/admin/facturas/${id}`, { withAnchor: true });
@@ -77,7 +79,7 @@ export function DashboardMovil() {
       { withAnchor: true },
     );
   const irAClientes = () => router.push('/admin/clientes');
-  const irANuevoCliente = () => router.push('/admin/clientes/nuevo');
+  const irANuevoCliente = () => router.push('/admin/clientes/nuevo', { withAnchor: true });
 
   /** La curva de la plata en la calle, un punto por mes. */
   const curva: PuntoGrafico[] = useMemo(

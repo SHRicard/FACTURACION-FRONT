@@ -3,7 +3,7 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import { SecureStorageKeys, secureStorageService } from '@/services/storage';
 import type { RootState } from '@/store';
 
-import type { Pendiente, Sesion, Usuario, UsuarioActual } from '../types';
+import type { AvisoSesion, Pendiente, Sesion, Usuario, UsuarioActual } from '../types';
 
 /**
  * `verificando` es el estado del arranque: hay un token guardado de una sesion
@@ -22,6 +22,11 @@ type AuthState = {
    * Mientras no sea null, la app no deja pasar de la bienvenida.
    */
   pendiente: Pendiente;
+  /**
+   * Aviso de una sola vez para la primera pantalla después de entrar (ej. la
+   * cuenta quedó vinculada a Google). null = nada que avisar.
+   */
+  aviso: AvisoSesion | null;
 };
 
 /**
@@ -37,6 +42,7 @@ const estadoInicial: AuthState = {
   token: tokenGuardado,
   arranque: tokenGuardado ? 'verificando' : 'listo',
   pendiente: null,
+  aviso: null,
 };
 
 /**
@@ -76,23 +82,49 @@ const authSlice = createSlice({
       estado.pendiente = accion.payload;
     },
 
+    /**
+     * Solo lo despacha `cerrarSesionLocal`, que además borra el token y vacía
+     * la caché de RTK Query.
+     */
     sesionCerrada: (estado) => {
       estado.usuario = null;
       estado.token = null;
       estado.pendiente = null;
+      estado.aviso = null;
       estado.arranque = 'listo';
+    },
+
+    /**
+     * Deja un aviso para la primera pantalla después de entrar. Va aparte de
+     * `sesionIniciada` (que no lo toca) porque se despacha justo después, solo
+     * cuando corresponde.
+     */
+    avisoDeSesionMostrado: (estado, accion: PayloadAction<AvisoSesion>) => {
+      estado.aviso = accion.payload;
+    },
+
+    /** La persona cerró el aviso: no vuelve a aparecer. */
+    avisoDeSesionVisto: (estado) => {
+      estado.aviso = null;
     },
   },
 });
 
-export const { sesionIniciada, sesionRestaurada, pendienteActualizado, sesionCerrada } =
-  authSlice.actions;
+export const {
+  sesionIniciada,
+  sesionRestaurada,
+  pendienteActualizado,
+  sesionCerrada,
+  avisoDeSesionMostrado,
+  avisoDeSesionVisto,
+} = authSlice.actions;
 export const authReducer = authSlice.reducer;
 
 // Selectores: las pantallas leen de aca, no del shape crudo del store.
 export const selectUsuario = (estado: RootState) => estado.auth.usuario;
 export const selectToken = (estado: RootState) => estado.auth.token;
 export const selectPendiente = (estado: RootState) => estado.auth.pendiente;
+export const selectAvisoSesion = (estado: RootState) => estado.auth.aviso;
 
 /**
  * Hay sesion usable cuando conocemos al usuario, no cuando hay un token: un

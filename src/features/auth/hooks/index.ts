@@ -2,6 +2,7 @@ export { useAbrirSesion } from './useAbrirSesion';
 export { useArranqueSesion } from './useArranqueSesion';
 export { useAvisoSesion } from './useAvisoSesion';
 export { useCambiarPassword } from './useCambiarPassword';
+export { useCuentaSuspendida } from './useCuentaSuspendida';
 export { useLogin } from './useLogin';
 export { useLoginGoogle } from './useLoginGoogle';
 export { useRecuperarPassword } from './useRecuperarPassword';

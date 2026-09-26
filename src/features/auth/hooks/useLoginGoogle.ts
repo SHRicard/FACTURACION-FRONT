@@ -7,6 +7,8 @@ import { interpretarError, type ErrorApi } from '@/shared/utils';
 import { useAppDispatch } from '@/store';
 
 import { useLoginGoogleMutation } from '../api/authApi';
+import { RUTA_CUENTA_SUSPENDIDA } from '../rutas';
+import { CODIGO_CUENTA_SUSPENDIDA } from '../schemas';
 import { avisoDeSesionMostrado } from '../store/authSlice';
 import { useAbrirSesion } from './useAbrirSesion';
 
@@ -127,6 +129,12 @@ export function useLoginGoogle({ acepto }: OpcionesLoginGoogle = {}) {
 
       const delBackend = interpretarError(fallo);
 
+      // Suspendida: el cartel con el motivo lo muestra su propia pantalla.
+      if (delBackend?.codigo === CODIGO_CUENTA_SUSPENDIDA) {
+        router.replace(RUTA_CUENTA_SUSPENDIDA);
+        return;
+      }
+
       // No existe la cuenta y nadie acepto nada todavia: se pregunta.
       if (faltaAceptar(delBackend) && tokenPendiente.current) {
         setAceptaEnDialogo(false);
@@ -145,7 +153,7 @@ export function useLoginGoogle({ acepto }: OpcionesLoginGoogle = {}) {
     } finally {
       setAbriendoHoja(false);
     }
-  }, [canjear, acepto]);
+  }, [canjear, acepto, router]);
 
   /** Segundo intento, ya con la casilla tildada en el dialogo. */
   const confirmarConsentimiento = useCallback(async () => {

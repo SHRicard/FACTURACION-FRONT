@@ -16,13 +16,18 @@ import { PuertaActualizacion } from '@/features/actualizacion/components';
 import { ArranqueSesion } from '@/features/auth/components';
 import { BotonDesignSystem } from '@/features/design-system/components';
 import { PantallaError } from '@/features/errores/components';
+import { NotificacionesRaiz } from '@/features/notificaciones/components';
 import { AppProviders } from '@/providers';
 import { instalarReporteGlobal, recordarRuta } from '@/services/errores';
+import { instalarHandlerNotificaciones } from '@/services/notificaciones';
 import { useTheme, useThemeMode } from '@/theme';
 
 // Los errores JS que pasan fuera del render (un onPress, un timer) no llegan al
 // ErrorBoundary: los atrapa el handler global, que también los reporta (K12).
 instalarReporteGlobal();
+
+// Con la app abierta, un aviso que llega se muestra igual (por defecto no se ve).
+instalarHandlerNotificaciones();
 
 /**
  * Si algo revienta al renderizar, expo-router muestra ESTA pantalla de error en
@@ -118,6 +123,9 @@ function RootNavigator() {
       {/* Nada se navega hasta saber si la sesion guardada sigue valiendo. */}
       <ArranqueSesion>
         <Stack screenOptions={{ headerShown: false }} />
+        {/* Registra el teléfono y abre lo que se toca. Va DESPUÉS del Stack:
+            abre pantallas, así que necesita el navegador montado. */}
+        <NotificacionesRaiz />
       </ArranqueSesion>
       {/* Flota por encima de toda la app. Solo en __DEV__. */}
       <BotonDesignSystem />

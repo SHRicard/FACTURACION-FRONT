@@ -3,7 +3,7 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import { SecureStorageKeys, secureStorageService } from '@/services/storage';
 import type { RootState } from '@/store';
 
-import type { AvisoSesion, Pendiente, Sesion, Usuario, UsuarioActual } from '../types';
+import type { AvisoSesion, Pendiente, Sesion, Suspension, Usuario, UsuarioActual } from '../types';
 
 /**
  * `verificando` es el estado del arranque: hay un token guardado de una sesion
@@ -27,6 +27,11 @@ type AuthState = {
    * cuenta quedó vinculada a Google). null = nada que avisar.
    */
   aviso: AvisoSesion | null;
+  /**
+   * La cuenta quedó suspendida (403 CUENTA_SUSPENDIDA). Sobrevive al cierre de
+   * sesión a propósito: es lo que lee la pantalla a la que se manda después.
+   */
+  suspension: Suspension | null;
 };
 
 /**
@@ -43,6 +48,7 @@ const estadoInicial: AuthState = {
   arranque: tokenGuardado ? 'verificando' : 'listo',
   pendiente: null,
   aviso: null,
+  suspension: null,
 };
 
 /**
@@ -61,6 +67,7 @@ const authSlice = createSlice({
       estado.token = accion.payload.token;
       estado.pendiente = accion.payload.pendiente;
       estado.arranque = 'listo';
+      estado.suspension = null;
     },
 
     /**
@@ -107,6 +114,19 @@ const authSlice = createSlice({
     avisoDeSesionVisto: (estado) => {
       estado.aviso = null;
     },
+
+    /**
+     * El backend respondió 403 CUENTA_SUSPENDIDA. Lo despacha el middleware
+     * DESPUÉS de `cerrarSesionLocal`, que no lo borra.
+     */
+    cuentaSuspendida: (estado, accion: PayloadAction<Suspension>) => {
+      estado.suspension = accion.payload;
+    },
+
+    /** La persona leyó el cartel y vuelve al login. */
+    suspensionVista: (estado) => {
+      estado.suspension = null;
+    },
   },
 });
 
@@ -117,6 +137,8 @@ export const {
   sesionCerrada,
   avisoDeSesionMostrado,
   avisoDeSesionVisto,
+  cuentaSuspendida,
+  suspensionVista,
 } = authSlice.actions;
 export const authReducer = authSlice.reducer;
 
@@ -125,6 +147,7 @@ export const selectUsuario = (estado: RootState) => estado.auth.usuario;
 export const selectToken = (estado: RootState) => estado.auth.token;
 export const selectPendiente = (estado: RootState) => estado.auth.pendiente;
 export const selectAvisoSesion = (estado: RootState) => estado.auth.aviso;
+export const selectSuspension = (estado: RootState) => estado.auth.suspension;
 
 /**
  * Hay sesion usable cuando conocemos al usuario, no cuando hay un token: un

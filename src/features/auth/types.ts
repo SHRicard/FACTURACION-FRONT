@@ -57,3 +57,13 @@ export type RespuestaSimple = z.infer<typeof respuestaSimpleSchema>;
  *                        back invalidó la contraseña anterior (K13).
  */
 export type AvisoSesion = 'google-vinculada';
+
+/**
+ * Por qué se cerró la sesión cuando fue una suspensión: lo que muestra la
+ * pantalla "Cuenta suspendida". `motivo` es null si el super_admin no escribió
+ * ninguno.
+ */
+export type Suspension = {
+  mensaje: string;
+  motivo: string | null;
+};

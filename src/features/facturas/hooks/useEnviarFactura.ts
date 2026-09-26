@@ -5,7 +5,7 @@ import { Linking } from 'react-native';
 
 import { API_BASE_URL } from '@/config';
 import { useMiMarcaQuery } from '@/features/marcas/api/marcasApi';
-import { headersDeSesion } from '@/services/api';
+import { headersDeApp, headersDeSesion } from '@/services/api';
 import { compartirArchivo } from '@/services/archivos';
 import { aplicarDetalles, interpretarError } from '@/shared/utils';
 
@@ -91,7 +91,9 @@ export function useEnviarFactura(detalle: FacturaDetalle | undefined) {
     try {
       const resultado = await compartirArchivo({
         url: `${API_BASE_URL}/facturas/${encodeURIComponent(detalle.factura.id)}/pdf`,
-        headers: headersDeSesion(),
+        // `X-App-Version` en TODA request: con ella el panel sabe qué versión usa
+        // cada cuenta (docs/SUPER_ADMIN.md, 9.1).
+        headers: { ...headersDeApp(), ...headersDeSesion() },
         nombre: nombreArchivoFactura(detalle),
         mimeType: 'application/pdf',
         uti: 'com.adobe.pdf',

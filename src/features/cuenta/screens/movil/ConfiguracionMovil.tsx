@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { AjusteNotificaciones } from '@/features/notificaciones/components';
 import {
   Pantalla,
   SelectorEstiloCabecera,
@@ -39,6 +40,9 @@ export function ConfiguracionMovil() {
           </View>
           <SelectorModo />
         </View>
+
+        {/* En web o en un emulador no se dibuja: ahi no llegan. */}
+        <AjusteNotificaciones />
 
         <View style={styles.bloque}>
           <View style={styles.encabezado}>

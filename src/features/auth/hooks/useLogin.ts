@@ -6,7 +6,8 @@ import { GOOGLE_HABILITADO } from '@/config';
 import { aplicarDetalles, interpretarError } from '@/shared/utils';
 
 import { useLoginMutation } from '../api/authApi';
-import { loginSchema } from '../schemas';
+import { RUTA_CUENTA_SUSPENDIDA } from '../rutas';
+import { CODIGO_CUENTA_SUSPENDIDA, loginSchema } from '../schemas';
 import type { LoginForm } from '../types';
 import { useAbrirSesion } from './useAbrirSesion';
 
@@ -33,7 +34,13 @@ export function useLogin() {
       abrirSesion(sesion);
       router.replace('/');
     } catch (fallo) {
-      aplicarDetalles(form, interpretarError(fallo));
+      const detalleFallo = interpretarError(fallo);
+      // Suspendida: el cartel con el motivo lo muestra su propia pantalla.
+      if (detalleFallo?.codigo === CODIGO_CUENTA_SUSPENDIDA) {
+        router.replace(RUTA_CUENTA_SUSPENDIDA);
+        return;
+      }
+      aplicarDetalles(form, detalleFallo);
     }
   });
 

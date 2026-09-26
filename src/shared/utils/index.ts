@@ -16,6 +16,7 @@ export {
   formatearFechaCorta,
   formatearMoneda,
   formatearVentanaPago,
+  haceCuanto,
   hoyEnArgentina,
   iniciales,
   soloDigitos,

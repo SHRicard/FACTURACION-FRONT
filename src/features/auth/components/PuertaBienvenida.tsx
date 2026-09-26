@@ -2,7 +2,7 @@ import { Redirect } from 'expo-router';
 import type { ReactNode } from 'react';
 
 import { useSesion } from '../hooks';
-import { RUTA_LOGIN, RUTA_POR_PENDIENTE } from '../rutas';
+import { RUTA_CUENTA_SUSPENDIDA, RUTA_LOGIN, RUTA_POR_PENDIENTE } from '../rutas';
 import type { Pendiente } from '../types';
 
 interface PuertaBienvenidaProps {
@@ -23,9 +23,10 @@ interface PuertaBienvenidaProps {
  * `pendiente` de la SESION, y ya lo usan dos features (los terminos y la marca).
  */
 export function PuertaBienvenida({ paso, children }: PuertaBienvenidaProps) {
-  const { usuario, pendiente } = useSesion();
+  const { usuario, pendiente, suspension } = useSesion();
 
-  if (!usuario) return <Redirect href={RUTA_LOGIN} />;
+  // Sin sesion porque la suspendieron: el cartel que lo explica, no el login.
+  if (!usuario) return <Redirect href={suspension ? RUTA_CUENTA_SUSPENDIDA : RUTA_LOGIN} />;
   if (!pendiente) return <Redirect href="/" />;
   if (pendiente !== paso) return <Redirect href={RUTA_POR_PENDIENTE[pendiente]} />;
 

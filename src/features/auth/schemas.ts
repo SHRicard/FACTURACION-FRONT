@@ -184,6 +184,19 @@ export const tokenResetValidoSchema = z.object({
   email: z.email(),
 });
 
+/**
+ * El 403 de una cuenta suspendida por el super_admin. Llega en cualquier
+ * request con sesion, y tambien en el login y en Google. `motivo` viene solo si
+ * el super_admin escribio uno.
+ */
+export const CODIGO_CUENTA_SUSPENDIDA = 'CUENTA_SUSPENDIDA';
+
+export const cuerpoSuspensionSchema = z.object({
+  error: z.string().catch('Tu cuenta está suspendida.'),
+  codigo: z.literal(CODIGO_CUENTA_SUSPENDIDA),
+  detalles: z.object({ motivo: z.string().optional() }).optional(),
+});
+
 /** Los endpoints que solo confirman una accion (ej. mail de recuperacion enviado). */
 export const respuestaSimpleSchema = z.object({
   mensaje: z.string(),

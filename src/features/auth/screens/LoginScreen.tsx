@@ -21,6 +21,9 @@ export function LoginScreen() {
         <>
           <EnlaceAuth href="/recuperar-password" label="Olvidaste tu contrasena?" />
           <EnlaceAuth href="/registro" label="No tenes cuenta? Registrate" />
+          {/* Los avisos se leen sin sesión: a quien no puede entrar (un
+              mantenimiento) le sirve saber por qué. */}
+          <EnlaceAuth href="/avisos" label="Ver avisos de la app" />
         </>
       }
     >

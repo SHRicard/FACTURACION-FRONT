@@ -10,6 +10,18 @@
  * cada vez y a commitear el client ID.
  */
 
+const fs = require('fs');
+const path = require('path');
+
+/**
+ * El `google-services.json` de Firebase: por él Expo manda las notificaciones
+ * de Android (FCM, docs/NOTIFICACIONES.md 3.2). Se suma solo si el archivo
+ * está, igual que el plugin de Google Sign-In: sin él el proyecto sigue
+ * compilando y la app anda, solo que no recibe notificaciones.
+ */
+const GOOGLE_SERVICES = './google-services.json';
+const hayGoogleServices = fs.existsSync(path.join(__dirname, GOOGLE_SERVICES));
+
 /** El scheme de iOS es el client ID al reves, sin el sufijo del dominio. */
 function schemeDesdeClientId(clientId) {
   if (!clientId) return null;
@@ -65,5 +77,19 @@ module.exports = ({ config }) => {
     plugins.push(['@react-native-google-signin/google-signin', { iosUrlScheme }]);
   }
 
-  return { ...config, plugins };
+  /*
+   * El projectId de EAS lo escribe `eas init` en app.json (extra.eas). Sin
+   * él no hay token de Expo para las notificaciones; se puede pasar también por
+   * EAS_PROJECT_ID para no commitearlo.
+   */
+  const projectId = config.extra?.eas?.projectId ?? process.env.EAS_PROJECT_ID;
+  const extra = projectId
+    ? { ...config.extra, eas: { ...config.extra?.eas, projectId } }
+    : config.extra;
+
+  const android = hayGoogleServices
+    ? { ...config.android, googleServicesFile: GOOGLE_SERVICES }
+    : config.android;
+
+  return { ...config, plugins, android, extra };
 };

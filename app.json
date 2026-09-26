@@ -84,6 +84,14 @@
         }
       ],
       [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#2D6CDF",
+          "defaultChannel": "avisos"
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "Usamos tus fotos para que elijas el logo de tu marca. Solo cuando tocás \"Subir logo\".",
@@ -95,6 +103,16 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "expo-navigation-bar": {
+        "enforceContrast": false
+      },
+      "eas": {
+        "projectId": "44954763-2d86-4626-b5cf-d7eb6059e5e5"
+      }
+    },
+    "owner": "rricardo-dev"
   }
 }

@@ -4,9 +4,9 @@ import type { FetchBaseQueryMeta } from '@reduxjs/toolkit/query';
 import { headersDeSesion } from '@/services/api';
 
 import { ENDPOINTS_PUBLICOS } from '../api/authApi';
-import { pendienteSchema } from '../schemas';
-import type { Pendiente } from '../types';
-import { pendienteActualizado } from './authSlice';
+import { cuerpoSuspensionSchema, pendienteSchema } from '../schemas';
+import type { Pendiente, Suspension } from '../types';
+import { cuentaSuspendida, pendienteActualizado } from './authSlice';
 import { cerrarSesionLocal } from './cerrarSesionLocal';
 
 const publicos = new Set<string>(ENDPOINTS_PUBLICOS);
@@ -16,6 +16,14 @@ function pendienteDelError(payload: unknown): Pendiente {
   const data = (payload as { data?: { detalles?: { pendiente?: unknown } } } | undefined)?.data;
   const leido = pendienteSchema.safeParse(data?.detalles?.pendiente ?? null);
   return leido.success ? leido.data : null;
+}
+
+/** El cuerpo de un 403 CUENTA_SUSPENDIDA, o null si el 403 es otra cosa. */
+function suspensionDelError(payload: unknown): Suspension | null {
+  const data = (payload as { data?: unknown } | undefined)?.data;
+  const leido = cuerpoSuspensionSchema.safeParse(data);
+  if (!leido.success) return null;
+  return { mensaje: leido.data.error, motivo: leido.data.detalles?.motivo ?? null };
 }
 
 /**
@@ -87,6 +95,19 @@ export const sesionCaidaMiddleware: Middleware = (store) => (next) => (accion) =
      * manda a la pantalla del paso que falta.
      */
     if (status === 403) {
+      /*
+       * El super_admin suspendió la cuenta: la sesión deja de valer al
+       * instante y va a seguir respondiendo 403 hasta que la reactive, así que
+       * no se reintenta nada. Se cierra (si había una: en el login no hay) y
+       * los portones mandan a "Cuenta suspendida" (docs/SUPER_ADMIN.md, 9.2).
+       */
+      const suspension = suspensionDelError(accion.payload);
+      if (suspension) {
+        if (headersDeSesion().Authorization) cerrarSesionLocal(store.dispatch);
+        store.dispatch(cuentaSuspendida(suspension));
+        return resultado;
+      }
+
       const pendiente = pendienteDelError(accion.payload);
       if (pendiente) store.dispatch(pendienteActualizado(pendiente));
     }

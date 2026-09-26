@@ -99,6 +99,14 @@ export const TAGS_API = [
   'Factura',
   'Marca',
   'Metrica',
+  // Panel del super_admin (`/admin/*`).
+  'Plataforma',
+  'AdminUsuario',
+  'AdminMarca',
+  'ErrorApp',
+  'AdminAviso',
+  // Avisos que ve la app (`/app/avisos`), con o sin sesión.
+  'Aviso',
 ] as const;
 
 /**

@@ -78,3 +78,17 @@ export function hoyEnArgentina(): string {
 export function formatearVentanaPago(desdeDia: number, hastaDia: number): string {
   return desdeDia === hastaDia ? `el ${desdeDia}` : `del ${desdeDia} al ${hastaDia}`;
 }
+
+/**
+ * `'2026-09-23T21:00:13Z'` -> `'hace 3 días'`. `null` si no hay fecha: quien
+ * lo usa decide que decir ("nunca entró", "sin actividad"). Lo usan el panel
+ * del super_admin y la pantalla de avisos.
+ */
+export function haceCuanto(iso?: string | null): string | null {
+  if (!iso) return null;
+  const fecha = DateTime.fromISO(iso);
+  if (!fecha.isValid) return null;
+  // Un reloj del telefono un poco adelantado no puede decir "dentro de 1 min".
+  if (fecha > DateTime.now()) return 'recién';
+  return fecha.toRelative({ locale: 'es' });
+}

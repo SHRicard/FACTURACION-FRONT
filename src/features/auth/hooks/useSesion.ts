@@ -8,6 +8,7 @@ import {
   selectEstaAutenticado,
   selectPendiente,
   selectSesionVerificada,
+  selectSuspension,
   selectUsuario,
 } from '../store/authSlice';
 import { cerrarSesionLocal } from '../store/cerrarSesionLocal';
@@ -21,6 +22,8 @@ export function useSesion() {
   const pendiente = useAppSelector(selectPendiente);
   const estaAutenticado = useAppSelector(selectEstaAutenticado);
   const verificada = useAppSelector(selectSesionVerificada);
+  /** La cuenta se suspendio: sin sesion, se manda a "Cuenta suspendida" y no a login. */
+  const suspension = useAppSelector(selectSuspension);
 
   const cerrarSesion = useCallback(() => {
     // Cerrar la sesion del backend no cierra la de Google: sin esto queda en el
@@ -36,5 +39,5 @@ export function useSesion() {
     router.replace('/login');
   }, [dispatch, router]);
 
-  return { usuario, pendiente, estaAutenticado, verificada, cerrarSesion };
+  return { usuario, pendiente, estaAutenticado, verificada, suspension, cerrarSesion };
 }

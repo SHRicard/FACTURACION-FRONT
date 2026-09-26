@@ -1,5 +1,14 @@
 import { useRouter } from 'expo-router';
-import { ChartColumn, Compass, LogOut, Settings, Shapes, Store, User } from 'lucide-react-native';
+import {
+  ChartColumn,
+  Compass,
+  LogOut,
+  Megaphone,
+  Settings,
+  Shapes,
+  Store,
+  User,
+} from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
@@ -90,6 +99,12 @@ export function MasMovil() {
             titulo="Configuracion"
             descripcion="Apariencia y tipografia"
             onPress={() => router.push('/admin/cuenta/configuracion')}
+          />
+          <OpcionMenu
+            icono={<Megaphone size={tamanoIcono} color={theme.colors.text} />}
+            titulo="Avisos"
+            descripcion="Mantenimientos, novedades y versiones nuevas"
+            onPress={() => router.push('/avisos')}
           />
           {/*
             Solo aparece cuando la guia NO se esta viendo: con la hoja abierta,

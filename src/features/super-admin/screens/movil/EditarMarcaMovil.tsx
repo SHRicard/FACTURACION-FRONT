@@ -30,7 +30,7 @@ export function EditarMarcaMovil() {
 
   if (ficha.cargando || !ficha.detalle) {
     return (
-      <Pantalla titulo="Editar marca" ancho="formulario" onVolver={volver} labelVolver="Marca">
+      <Pantalla titulo="Editar marca" onVolver={volver} labelVolver="Marca">
         {ficha.cargando ? (
           <View style={styles.centro}>
             <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -54,7 +54,6 @@ export function EditarMarcaMovil() {
     <Pantalla
       titulo="Editar marca"
       descripcion="Lo que dejes vacío se borra."
-      ancho="formulario"
       onVolver={volver}
       labelVolver="Marca"
     >

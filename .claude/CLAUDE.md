@@ -169,7 +169,7 @@ El umbral es **uno solo para toda la app**: `breakpointEscritorio` (`lg`, 905px)
 
 ### Las tres herramientas, en orden
 
-1. **`Container ancho="formulario" | "contenido" | "ancho"`** — el tope de ancho. Un formulario con tope 440 ya se ve bien en un monitor sin tocar nada.
+1. **`Container`** (lo pone `Pantalla`) — el contenido ocupa **siempre el 100% del ancho** menos `margenPantalla` (24) de cada lado. ❌ Sin topes de ancho: la app es móvil y un tope dejaba una columna angosta en el medio de los teléfonos grandes y los plegables.
 2. **`useBreakpoint().elegir({ sm, md, lg, xl })`** — para **números**: columnas, anchos, paddings. Ver `DashboardScreen`.
 3. **`useEsEscritorio()`** — para **composiciones distintas**. Es la última opción, porque duplica presentación.
 
@@ -181,7 +181,7 @@ Solo si cambia el **árbol**, no si cambian los **números**. Tres preguntas; si
 2. ¿Cambia el **anidado**? (dos pantallas → dos paneles lado a lado)
 3. ¿Cambia la **interacción**? (tap → hover y selección; tirar para abajo → botón de refrescar)
 
-Si solo cambian anchos, columnas o espaciados → herramientas 1 y 2, cero archivos nuevos.
+Si solo cambian columnas o espaciados → herramienta 2, cero archivos nuevos.
 
 ### Qué se comparte y qué se duplica
 
@@ -303,4 +303,4 @@ eas build --platform android --profile production
 12. **Antes de instalar una librería nueva**, avisá y explicá por qué, y confirmá si necesita development build (código nativo) o corre en Expo Go.
 13. Mensajes de commit con convención: `feat:`, `fix:`, `chore:`, `refactor:`.
 14. Si una tarea puede **romper algo**, explicá el cambio y esperá confirmación antes de aplicarlo.
-15. **Lo que se desarrolla hoy es la vista MÓVIL.** Todo cambio de pantalla va en `screens/movil/`; la de escritorio queda en `EnConstruccion` hasta su etapa. El corte lo decide el ancho con `useEsEscritorio()`, **nunca** `Platform.OS`. Antes de bifurcar una pantalla nueva, fijate si no alcanza con `Container` + `elegir()` (ver "📱 Móvil y escritorio").
+15. **Lo que se desarrolla hoy es la vista MÓVIL.** Todo cambio de pantalla va en `screens/movil/`; la de escritorio queda en `EnConstruccion` hasta su etapa. El corte lo decide el ancho con `useEsEscritorio()`, **nunca** `Platform.OS`. Antes de bifurcar una pantalla nueva, fijate si no alcanza con `elegir()` (ver "📱 Móvil y escritorio").

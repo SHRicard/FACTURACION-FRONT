@@ -12,7 +12,9 @@ import type { RespuestaAnulacion, RespuestaTicket, Ticket, TicketNuevo } from '.
  *
  * También invalidan el Inicio y las métricas (`{Metrica,'TODAS'}`) y Mi marca
  * (sus estadísticas): cambian con cada ticket, y el tab Inicio no se desmonta
- * al cambiar de tab, así que sin esto queda con los números viejos.
+ * al cambiar de tab, así que sin esto queda con los números viejos. Y las
+ * especies: el backend les descuenta la `cantidad` al cargar, y se la ajusta
+ * al corregir o anular.
  *
  * La respuesta se valida con `rawResponseSchema` (antes de transformar) y no
  * con un `.parse` en `transformResponse`: así una falla de schema se vuelve un
@@ -58,6 +60,7 @@ export const ticketsApi = baseApi.injectEndpoints({
         { type: 'Factura', id: 'VENCIDAS' },
         { type: 'Metrica', id: 'TODAS' },
         'Marca',
+        { type: 'Especie', id: 'LISTA' },
       ],
     }),
 
@@ -104,6 +107,7 @@ export const ticketsApi = baseApi.injectEndpoints({
         { type: 'Factura', id: 'VENCIDAS' },
         { type: 'Metrica', id: 'TODAS' },
         'Marca',
+        { type: 'Especie', id: 'LISTA' },
       ],
     }),
 
@@ -139,6 +143,7 @@ export const ticketsApi = baseApi.injectEndpoints({
         { type: 'Factura', id: 'VENCIDAS' },
         { type: 'Metrica', id: 'TODAS' },
         'Marca',
+        { type: 'Especie', id: 'LISTA' },
       ],
     }),
   }),

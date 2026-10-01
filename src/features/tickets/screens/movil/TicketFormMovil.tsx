@@ -79,7 +79,7 @@ export function TicketFormMovil() {
 
   if (especies.cargando || ficha.cargando || ticket.cargando) {
     return (
-      <Pantalla titulo={titulo} ancho="formulario" onVolver={volver} labelVolver={labelVolver}>
+      <Pantalla titulo={titulo} onVolver={volver} labelVolver={labelVolver}>
         <View style={styles.centro}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
@@ -89,7 +89,7 @@ export function TicketFormMovil() {
 
   if (ticket.esEdicion && !ticket.ticket) {
     return (
-      <Pantalla titulo={titulo} ancho="formulario" onVolver={volver} labelVolver={labelVolver}>
+      <Pantalla titulo={titulo} onVolver={volver} labelVolver={labelVolver}>
         <EstadoVacio
           titulo={ticket.noExiste ? 'Este ticket no existe' : 'No pudimos traer el ticket'}
           descripcion={
@@ -108,7 +108,7 @@ export function TicketFormMovil() {
    */
   if (ticket.esEdicion && !ficha.cliente) {
     return (
-      <Pantalla titulo={titulo} ancho="formulario" onVolver={volver} labelVolver={labelVolver}>
+      <Pantalla titulo={titulo} onVolver={volver} labelVolver={labelVolver}>
         <EstadoVacio
           titulo={
             ficha.noExiste ? 'Este cliente no existe' : 'No pudimos traer la cuenta del cliente'
@@ -126,7 +126,7 @@ export function TicketFormMovil() {
    */
   if (especies.falloLaCarga) {
     return (
-      <Pantalla titulo={titulo} ancho="formulario" onVolver={volver} labelVolver={labelVolver}>
+      <Pantalla titulo={titulo} onVolver={volver} labelVolver={labelVolver}>
         <EstadoVacio
           titulo="No pudimos traer las especies"
           descripcion={especies.error ?? undefined}
@@ -143,7 +143,7 @@ export function TicketFormMovil() {
    */
   if (especies.vacio) {
     return (
-      <Pantalla titulo={titulo} ancho="formulario" onVolver={volver} labelVolver={labelVolver}>
+      <Pantalla titulo={titulo} onVolver={volver} labelVolver={labelVolver}>
         <EstadoVacio
           icono={<Shapes size={theme.typography.size.heading} color={theme.colors.textMuted} />}
           titulo="Primero cargá una especie"
@@ -170,7 +170,7 @@ export function TicketFormMovil() {
     const anulado = ticket.ticket?.anulado;
 
     return (
-      <Pantalla titulo={titulo} ancho="formulario" onVolver={volver} labelVolver={labelVolver}>
+      <Pantalla titulo={titulo} onVolver={volver} labelVolver={labelVolver}>
         <EstadoVacio
           icono={<Ban size={theme.typography.size.heading} color={theme.colors.textMuted} />}
           titulo={anulado ? 'Este ticket está anulado' : 'Este ticket ya está cerrado'}
@@ -209,7 +209,6 @@ export function TicketFormMovil() {
               .join(' · ')
           : undefined
       }
-      ancho="formulario"
       onVolver={volver}
       labelVolver={labelVolver}
     >

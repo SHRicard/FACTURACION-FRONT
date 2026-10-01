@@ -31,7 +31,7 @@ export function AvisoDetalleMovil() {
 
   if (detalle.cargando && !refresco.refrescando) {
     return (
-      <Pantalla titulo="Aviso" ancho="contenido" onVolver={volver} labelVolver="Avisos">
+      <Pantalla titulo="Aviso" onVolver={volver} labelVolver="Avisos">
         <View style={styles.centro}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
@@ -43,7 +43,7 @@ export function AvisoDetalleMovil() {
 
   if (!aviso) {
     return (
-      <Pantalla titulo="Aviso" ancho="contenido" onVolver={volver} labelVolver="Avisos">
+      <Pantalla titulo="Aviso" onVolver={volver} labelVolver="Avisos">
         <EstadoVacio
           titulo={detalle.noExiste ? 'Este aviso no existe' : 'No pudimos traer el aviso'}
           descripcion={
@@ -71,7 +71,6 @@ export function AvisoDetalleMovil() {
     <Pantalla
       titulo="Aviso"
       descripcion={formatearFechaHora(aviso.createdAt) ?? undefined}
-      ancho="contenido"
       onVolver={volver}
       labelVolver="Avisos"
       accion={

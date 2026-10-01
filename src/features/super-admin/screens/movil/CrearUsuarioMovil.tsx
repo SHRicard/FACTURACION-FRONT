@@ -29,7 +29,6 @@ export function CrearUsuarioMovil() {
     <Pantalla
       titulo="Crear cuenta"
       descripcion="Nace sin términos aceptados: los acepta al entrar."
-      ancho="formulario"
       onVolver={() => router.back()}
       labelVolver="Usuarios"
     >

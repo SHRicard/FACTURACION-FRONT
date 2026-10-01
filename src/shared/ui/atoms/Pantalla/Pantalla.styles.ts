@@ -5,7 +5,7 @@ import type { Theme } from '@/theme';
 export const createStyles = (theme: Theme) =>
   StyleSheet.create({
     safe: { flex: 1, backgroundColor: theme.colors.background },
-    // El Container se centra solo; el flex es para que el contenido de abajo
+    // El Container pone los margenes; el flex es para que el contenido de abajo
     // (una lista, un estado vacio) pueda estirarse a lo que sobra.
     contenido: { flex: 1, gap: theme.spacing.lg, paddingTop: theme.spacing.sm },
     // Fila de navegacion y titulo van juntos y pegados entre si: el `gap: lg`

@@ -32,7 +32,7 @@ export function MarcaDetalleMovil() {
 
   if (ficha.cargando && !refresco.refrescando) {
     return (
-      <Pantalla titulo="Marca" ancho="contenido" onVolver={volver} labelVolver="Marcas">
+      <Pantalla titulo="Marca" onVolver={volver} labelVolver="Marcas">
         <View style={styles.centro}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
@@ -42,7 +42,7 @@ export function MarcaDetalleMovil() {
 
   if (!ficha.detalle) {
     return (
-      <Pantalla titulo="Marca" ancho="contenido" onVolver={volver} labelVolver="Marcas">
+      <Pantalla titulo="Marca" onVolver={volver} labelVolver="Marcas">
         <EstadoVacio
           titulo={ficha.noExiste ? 'Esta marca no existe' : 'No pudimos traer la marca'}
           descripcion={ficha.noExiste ? 'Puede que la hayan borrado.' : (ficha.error ?? undefined)}
@@ -68,7 +68,6 @@ export function MarcaDetalleMovil() {
     <Pantalla
       titulo={marca.nombre}
       descripcion={marca.direccion ?? undefined}
-      ancho="contenido"
       onVolver={volver}
       labelVolver="Marcas"
       accion={

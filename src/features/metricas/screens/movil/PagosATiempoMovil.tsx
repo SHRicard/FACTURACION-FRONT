@@ -46,12 +46,7 @@ export function PagosATiempoMovil() {
   const meses = datos ? [...datos.porMes].reverse() : [];
 
   return (
-    <Pantalla
-      titulo="Pagos a tiempo"
-      ancho="contenido"
-      onVolver={() => router.back()}
-      labelVolver="Métricas"
-    >
+    <Pantalla titulo="Pagos a tiempo" onVolver={() => router.back()} labelVolver="Métricas">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}

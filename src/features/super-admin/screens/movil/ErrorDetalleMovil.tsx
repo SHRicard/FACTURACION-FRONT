@@ -38,7 +38,7 @@ export function ErrorDetalleMovil() {
 
   if (detalle.cargando && !refresco.refrescando) {
     return (
-      <Pantalla titulo="Error" ancho="contenido" onVolver={volver} labelVolver="Errores">
+      <Pantalla titulo="Error" onVolver={volver} labelVolver="Errores">
         <View style={styles.centro}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
@@ -50,7 +50,7 @@ export function ErrorDetalleMovil() {
 
   if (!grupo) {
     return (
-      <Pantalla titulo="Error" ancho="contenido" onVolver={volver} labelVolver="Errores">
+      <Pantalla titulo="Error" onVolver={volver} labelVolver="Errores">
         <EstadoVacio
           titulo={
             detalle.noExiste ? 'Este error ya no tiene reportes' : 'No pudimos traer el error'
@@ -76,7 +76,6 @@ export function ErrorDetalleMovil() {
     <Pantalla
       titulo={grupo.nombre ?? 'Error'}
       descripcion={`Últimos ${detalle.dias} días`}
-      ancho="contenido"
       onVolver={volver}
       labelVolver="Errores"
       accion={

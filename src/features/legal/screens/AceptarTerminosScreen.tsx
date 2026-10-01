@@ -39,7 +39,7 @@ export function AceptarTerminosScreen() {
   return (
     <PuertaBienvenida paso="terminos">
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-        <Container ancho="contenido" style={styles.contenido}>
+        <Container style={styles.contenido}>
           <View style={styles.encabezado}>
             <Text variant="heading" weight="bold" accessibilityRole="header">
               Antes de empezar

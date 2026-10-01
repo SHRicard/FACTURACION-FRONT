@@ -32,7 +32,7 @@ export function ArranqueSesion({ children }: { children: ReactNode }) {
   if (!verificada && fallo) {
     return (
       <View style={[styles.pantalla, styles.conMargen]}>
-        <Container ancho="formulario" style={styles.fallo}>
+        <Container style={styles.fallo}>
           {/* El icono es decorativo: lo que se lee es el titulo. */}
           <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
             <WifiOff size={40} color={theme.colors.textMuted} />
@@ -76,8 +76,9 @@ const createStyles = (theme: Theme) =>
       justifyContent: 'center',
       backgroundColor: theme.colors.background,
     },
+    // Solo arriba y abajo: los costados ya los pone el `Container`.
     conMargen: {
-      padding: theme.spacing.lg,
+      paddingVertical: theme.spacing.lg,
     },
     fallo: {
       gap: theme.spacing.md,

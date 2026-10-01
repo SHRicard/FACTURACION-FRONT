@@ -28,8 +28,8 @@ type AuthLayoutProps = {
  * Marco visual compartido por login, registro y recuperar contrasena.
  *
  * Resuelve lo aburrido pero importante: que el teclado no tape los campos, que
- * el contenido siga scrolleando en pantallas chicas y que el formulario no se
- * estire a lo ancho de un monitor (de eso se ocupa el `Container`).
+ * el contenido siga scrolleando en pantallas chicas y que el formulario tenga
+ * los mismos margenes laterales que el resto de la app (los pone el `Container`).
  */
 export function AuthLayout({
   logo = false,
@@ -64,7 +64,7 @@ export function AuthLayout({
           showsVerticalScrollIndicator={false}
         >
           {/* Un formulario de login no gana nada midiendo 1900px. */}
-          <Container ancho="formulario" style={styles.contenido}>
+          <Container style={styles.contenido}>
             {/*
               El asset se importa por nombre base: Metro elige la densidad
               (@2x/@3x) segun la pantalla. La ruta tiene que ser estatica.

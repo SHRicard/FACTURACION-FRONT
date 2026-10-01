@@ -1,3 +1,5 @@
+import { spacing } from './spacing';
+
 /**
  * Tokens de layout responsive.
  *
@@ -25,35 +27,15 @@ export const breakpoints = {
 } as const;
 
 /**
- * Anchos maximos de contenido, por tipo de contenido.
+ * Margen a cada costado del contenido de una pantalla.
  *
- * Sin esto, en un monitor de 1920px un formulario se estira a todo el ancho y
- * queda ilegible. El limite no es estetico: una linea de texto comoda ronda los
- * 60-75 caracteres.
+ * La app es movil: el contenido ocupa TODO el ancho menos este margen, en
+ * cualquier telefono. Es fijo y no un porcentaje ni un tope de ancho a proposito:
+ * con un tope, en un telefono grande o un plegable el formulario quedaba como
+ * una columna angosta en el medio, y con un porcentaje el margen crece con la
+ * pantalla y se come lugar que el contenido necesita.
  */
-export const maxWidth = {
-  /** Formularios de una columna: login, registro, alta de factura. */
-  formulario: 440,
-  /** Texto corrido, fichas, detalle. */
-  contenido: 760,
-  /**
-   * Listados, tablas y dashboards. El techo es alto a proposito: en una pantalla
-   * normal gana el 90% (`anchoUtil`) y este limite solo entra a jugar en un
-   * monitor ultrawide, para que el contenido no quede desparramado.
-   */
-  ancho: 1600,
-  /** Sin limite: ocupa todo lo disponible. */
-  completo: 100000,
-} as const;
-
-/**
- * Porcentaje del ancho de pantalla que ocupa el contenido.
- *
- * El 10% restante son los margenes laterales. Es lo que hace que la app se vea
- * "llena" en un monitor en vez de una columna angosta en el medio, sin dejar el
- * contenido pegado a los bordes.
- */
-export const anchoUtil = '90%';
+export const margenPantalla = spacing.lg;
 
 /**
  * Alto BASE de la barra de tabs, SIN contar el area segura de abajo.
@@ -83,12 +65,10 @@ export const breakpointEscritorio: Breakpoint = 'lg';
 
 export const layout = {
   breakpoints,
-  maxWidth,
-  anchoUtil,
+  margenPantalla,
   alturaBarraTabs,
   breakpointEscritorio,
 } as const;
 
 export type Breakpoint = keyof typeof breakpoints;
-export type MaxWidth = keyof typeof maxWidth;
 export type Layout = typeof layout;

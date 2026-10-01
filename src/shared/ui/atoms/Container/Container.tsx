@@ -1,5 +1,5 @@
 import { memo, useMemo } from 'react';
-import { View, type DimensionValue, type ViewStyle } from 'react-native';
+import { View } from 'react-native';
 
 import { useTheme } from '@/theme';
 
@@ -7,31 +7,20 @@ import { createStyles } from './Container.styles';
 import type { ContainerProps } from './Container.types';
 
 /**
- * Limita el ancho del contenido y lo centra.
+ * Le da al contenido de una pantalla sus margenes laterales.
  *
- * Ocupa el 90% del ancho disponible (el 10% restante son los margenes) y despues
- * aplica un tope segun QUE contenido lleve adentro. Por eso un listado usa toda
- * la pantalla y un formulario no: el formulario tiene su propio techo.
- *
- * No pregunta por la plataforma, solo por el ancho, asi que resuelve igual el
- * caso de una tablet en horizontal.
+ * Ocupa TODO el ancho disponible menos `margenPantalla` de cada lado, en
+ * cualquier tamano de telefono. No tiene tope de ancho a proposito: la app es
+ * movil, y un tope dejaba el contenido como una columna angosta en el medio de
+ * los telefonos grandes y los plegables.
  *
  * Toda pantalla deberia envolver su contenido en un Container.
  */
-function ContainerComponent({ children, ancho = 'contenido', style }: ContainerProps) {
+function ContainerComponent({ children, style }: ContainerProps) {
   const theme = useTheme();
-  const styles = useMemo(() => createStyles(), []);
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
-  const dinamico = useMemo<ViewStyle>(
-    () => ({
-      // `completo` va de borde a borde; el resto respeta los margenes.
-      width: (ancho === 'completo' ? '100%' : theme.layout.anchoUtil) as DimensionValue,
-      maxWidth: theme.layout.maxWidth[ancho],
-    }),
-    [ancho, theme.layout.anchoUtil, theme.layout.maxWidth],
-  );
-
-  return <View style={[styles.base, dinamico, style]}>{children}</View>;
+  return <View style={[styles.base, style]}>{children}</View>;
 }
 
 export const Container = memo(ContainerComponent);

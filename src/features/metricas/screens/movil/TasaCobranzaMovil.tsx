@@ -51,12 +51,7 @@ export function TasaCobranzaMovil() {
   const frase = datos ? fraseDeLaLibreta(datos.total) : null;
 
   return (
-    <Pantalla
-      titulo="Tasa de cobranza"
-      ancho="contenido"
-      onVolver={() => router.back()}
-      labelVolver="Métricas"
-    >
+    <Pantalla titulo="Tasa de cobranza" onVolver={() => router.back()} labelVolver="Métricas">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}

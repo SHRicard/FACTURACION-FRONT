@@ -107,7 +107,6 @@ export function MetricasMovil() {
     <Pantalla
       titulo="Métricas"
       descripcion="Los números del negocio."
-      ancho="contenido"
       onVolver={() => router.back()}
       labelVolver="Mas"
     >

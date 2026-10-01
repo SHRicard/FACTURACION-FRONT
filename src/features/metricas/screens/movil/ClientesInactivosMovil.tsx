@@ -84,7 +84,6 @@ export function ClientesInactivosMovil() {
     <Pantalla
       titulo="Dejaron de comprar"
       descripcion="Y todavía deben. El que dejó de venir con la cuenta abierta es el que más fácil se pierde."
-      ancho="contenido"
       onVolver={() => router.back()}
       labelVolver="Métricas"
     >

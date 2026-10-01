@@ -52,7 +52,7 @@ export function SistemaMovil() {
 
   if (sistema.cargando && !refresco.refrescando) {
     return (
-      <Pantalla titulo="Sistema" ancho="contenido" onVolver={volver} labelVolver="Más">
+      <Pantalla titulo="Sistema" onVolver={volver} labelVolver="Más">
         <View style={styles.centro}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
@@ -62,7 +62,7 @@ export function SistemaMovil() {
 
   if (!sistema.sistema) {
     return (
-      <Pantalla titulo="Sistema" ancho="contenido" onVolver={volver} labelVolver="Más">
+      <Pantalla titulo="Sistema" onVolver={volver} labelVolver="Más">
         <EstadoVacio
           icono={<Server size={theme.typography.size.heading} color={theme.colors.textMuted} />}
           titulo="No pudimos traer el estado"
@@ -84,7 +84,6 @@ export function SistemaMovil() {
     <Pantalla
       titulo="Sistema"
       descripcion={`Actualizado ${haceCuanto(sistema.sistema.generadoEl) ?? ''}`}
-      ancho="contenido"
       onVolver={volver}
       labelVolver="Más"
       accion={botonRefrescar}

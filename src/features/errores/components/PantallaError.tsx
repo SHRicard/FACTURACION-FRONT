@@ -45,7 +45,7 @@ export function PantallaError({ error, retry }: ErrorBoundaryProps) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <Container ancho="formulario" style={styles.contenido}>
+      <Container style={styles.contenido}>
         {/* El icono es decorativo: lo que se lee es el titulo. */}
         <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
           <TriangleAlert size={40} color={theme.colors.error} />

@@ -9,6 +9,8 @@ export type EspecieForm = z.infer<typeof especieFormSchema>;
 export interface DatosEspecie {
   nombre: string;
   descripcion?: string;
+  /** Entero desde 0. `null` en la edicion le saca la cantidad. */
+  cantidad?: number | null;
 }
 
 /**

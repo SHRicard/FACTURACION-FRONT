@@ -24,7 +24,6 @@ export type {
   ClaveParTipografico,
   EstiloCabecera,
   EstiloTabs,
-  MaxWidth,
   ParTipografico,
 } from './tokens';
 export type { ColorScheme, Theme, ThemeMode } from './types';

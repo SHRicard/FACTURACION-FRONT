@@ -49,7 +49,7 @@ export function ComoEliminarCuentaScreen() {
 
   if (legal.cargando && !refresco.refrescando) {
     return (
-      <Pantalla titulo="Cómo eliminar tu cuenta" ancho="contenido" onVolver={volver}>
+      <Pantalla titulo="Cómo eliminar tu cuenta" onVolver={volver}>
         <View style={styles.centro}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
@@ -59,7 +59,7 @@ export function ComoEliminarCuentaScreen() {
 
   if (!legal.baja) {
     return (
-      <Pantalla titulo="Cómo eliminar tu cuenta" ancho="contenido" onVolver={volver}>
+      <Pantalla titulo="Cómo eliminar tu cuenta" onVolver={volver}>
         <EstadoVacio
           titulo="No pudimos traer los pasos"
           descripcion={legal.error ?? undefined}
@@ -72,7 +72,7 @@ export function ComoEliminarCuentaScreen() {
   const baja = legal.baja;
 
   return (
-    <Pantalla titulo="Cómo eliminar tu cuenta" ancho="contenido" onVolver={volver}>
+    <Pantalla titulo="Cómo eliminar tu cuenta" onVolver={volver}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}

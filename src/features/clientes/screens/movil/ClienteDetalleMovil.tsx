@@ -45,7 +45,7 @@ export function ClienteDetalleMovil() {
 
   if (ficha.cargando && !refresco.refrescando) {
     return (
-      <Pantalla titulo="Cliente" ancho="contenido" onVolver={volver} labelVolver="Clientes">
+      <Pantalla titulo="Cliente" onVolver={volver} labelVolver="Clientes">
         <View style={styles.centro}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
@@ -55,7 +55,7 @@ export function ClienteDetalleMovil() {
 
   if (!ficha.cliente) {
     return (
-      <Pantalla titulo="Cliente" ancho="contenido" onVolver={volver} labelVolver="Clientes">
+      <Pantalla titulo="Cliente" onVolver={volver} labelVolver="Clientes">
         <EstadoVacio
           titulo={ficha.noExiste ? 'Este cliente no existe' : 'No pudimos traer el cliente'}
           descripcion={
@@ -82,7 +82,6 @@ export function ClienteDetalleMovil() {
     <Pantalla
       titulo={cliente.nombre}
       descripcion={`DNI ${cliente.dni}`}
-      ancho="contenido"
       onVolver={volver}
       labelVolver="Clientes"
       accion={

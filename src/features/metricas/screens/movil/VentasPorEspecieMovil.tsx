@@ -45,7 +45,6 @@ export function VentasPorEspecieMovil() {
     <Pantalla
       titulo="Ventas por especie"
       descripcion="Cuánto se vende de qué."
-      ancho="contenido"
       onVolver={() => router.back()}
       labelVolver="Métricas"
     >

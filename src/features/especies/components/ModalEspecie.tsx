@@ -6,7 +6,8 @@ import { useTheme, type Theme } from '@/theme';
 import type { useGuardarEspecie } from '../hooks';
 
 /**
- * Alta y edicion de una especie. Un modal alcanza: son dos campos.
+ * Alta y edicion de una especie. Un modal alcanza: son tres campos y solo el
+ * nombre es obligatorio.
  *
  * Recibe el hook entero en vez de diez props sueltas: el formulario, el estado
  * de guardado y el abrir/cerrar son una sola cosa y separarlos solo agregaria
@@ -60,6 +61,19 @@ export function ModalEspecie({ guardar }: { guardar: ReturnType<typeof useGuarda
           placeholder="Largos y de vestir"
           helperText="Opcional. Para acordarte qué entra en este tipo."
           autoCapitalize="sentences"
+          returnKeyType="next"
+        />
+        {/* Sin valor por defecto: vacio es "sin cantidad", que no es lo mismo
+            que 0. El 400 del backend por una cantidad invalida cae aca abajo
+            solo, por `detalles.campos.cantidad`. */}
+        <CampoControlado
+          control={guardar.form.control}
+          name="cantidad"
+          label="Cantidad"
+          placeholder="100"
+          helperText="Opcional. Cuántas tenés: los tickets la van descontando solos."
+          keyboardType="number-pad"
+          maxLength={9}
           returnKeyType="done"
           onSubmitEditing={guardar.enviar}
         />

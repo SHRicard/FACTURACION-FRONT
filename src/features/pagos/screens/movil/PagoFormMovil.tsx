@@ -76,7 +76,7 @@ export function PagoFormMovil() {
 
   if (ficha.cargando || (facturaId && cuenta.cargando)) {
     return (
-      <Pantalla titulo={titulo} ancho="formulario" onVolver={volver} labelVolver={labelVolver}>
+      <Pantalla titulo={titulo} onVolver={volver} labelVolver={labelVolver}>
         <View style={styles.centro}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
@@ -86,7 +86,7 @@ export function PagoFormMovil() {
 
   if (!ficha.cliente || (facturaId && !cuenta.detalle)) {
     return (
-      <Pantalla titulo={titulo} ancho="formulario" onVolver={volver} labelVolver={labelVolver}>
+      <Pantalla titulo={titulo} onVolver={volver} labelVolver={labelVolver}>
         <EstadoVacio
           titulo="No pudimos traer la cuenta"
           descripcion={(facturaId ? cuenta.error : ficha.error) ?? undefined}
@@ -105,7 +105,7 @@ export function PagoFormMovil() {
    */
   if (pago.nadaQueCobrar) {
     return (
-      <Pantalla titulo={titulo} ancho="formulario" onVolver={volver} labelVolver={labelVolver}>
+      <Pantalla titulo={titulo} onVolver={volver} labelVolver={labelVolver}>
         <EstadoVacio
           icono={<Wallet size={theme.typography.size.heading} color={theme.colors.textMuted} />}
           titulo={facturaId ? 'Esta factura no recibe pagos' : 'No debe nada'}
@@ -135,7 +135,6 @@ export function PagoFormMovil() {
           ? `${ficha.cliente.nombre} · ${etiquetaFactura(factura.numero)}`
           : ficha.cliente.nombre
       }
-      ancho="formulario"
       onVolver={volver}
       labelVolver={labelVolver}
     >

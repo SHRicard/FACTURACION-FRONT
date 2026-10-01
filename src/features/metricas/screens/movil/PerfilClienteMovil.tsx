@@ -93,7 +93,7 @@ export function PerfilClienteMovil() {
 
   if (consulta.cargando && !refresco.refrescando) {
     return (
-      <Pantalla titulo="Perfil" ancho="contenido" onVolver={volver} labelVolver={labelVolver}>
+      <Pantalla titulo="Perfil" onVolver={volver} labelVolver={labelVolver}>
         <View style={styles.centro}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
@@ -103,7 +103,7 @@ export function PerfilClienteMovil() {
 
   if (!perfil) {
     return (
-      <Pantalla titulo="Perfil" ancho="contenido" onVolver={volver} labelVolver={labelVolver}>
+      <Pantalla titulo="Perfil" onVolver={volver} labelVolver={labelVolver}>
         <EstadoVacio
           icono={<Trophy size={theme.typography.size.heading} color={theme.colors.textMuted} />}
           titulo={
@@ -149,7 +149,6 @@ export function PerfilClienteMovil() {
     <Pantalla
       titulo={cliente.nombre}
       descripcion={`Perfil · DNI ${cliente.dni}`}
-      ancho="contenido"
       onVolver={volver}
       labelVolver={labelVolver}
     >

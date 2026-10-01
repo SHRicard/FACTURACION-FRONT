@@ -50,7 +50,7 @@ export function DocumentoLegalScreen({ tipo }: DocumentoLegalScreenProps) {
 
   if (legal.cargando && !refresco.refrescando) {
     return (
-      <Pantalla titulo={titulo} ancho="contenido" onVolver={volver}>
+      <Pantalla titulo={titulo} onVolver={volver}>
         <View style={styles.centro}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
@@ -60,7 +60,7 @@ export function DocumentoLegalScreen({ tipo }: DocumentoLegalScreenProps) {
 
   if (!legal.documento) {
     return (
-      <Pantalla titulo={titulo} ancho="contenido" onVolver={volver}>
+      <Pantalla titulo={titulo} onVolver={volver}>
         <EstadoVacio
           titulo="No pudimos traer el documento"
           descripcion={legal.error ?? undefined}
@@ -71,7 +71,7 @@ export function DocumentoLegalScreen({ tipo }: DocumentoLegalScreenProps) {
   }
 
   return (
-    <Pantalla titulo={titulo} ancho="contenido" onVolver={volver}>
+    <Pantalla titulo={titulo} onVolver={volver}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}

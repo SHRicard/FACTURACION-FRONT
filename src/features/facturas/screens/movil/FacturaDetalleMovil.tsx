@@ -83,7 +83,7 @@ export function FacturaDetalleMovil() {
 
   if (ficha.cargando && !refresco.refrescando) {
     return (
-      <Pantalla titulo="Factura" ancho="contenido" onVolver={volver} labelVolver="Facturación">
+      <Pantalla titulo="Factura" onVolver={volver} labelVolver="Facturación">
         <View style={styles.centro}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
@@ -93,7 +93,7 @@ export function FacturaDetalleMovil() {
 
   if (!ficha.detalle) {
     return (
-      <Pantalla titulo="Factura" ancho="contenido" onVolver={volver} labelVolver="Facturación">
+      <Pantalla titulo="Factura" onVolver={volver} labelVolver="Facturación">
         <EstadoVacio
           titulo={ficha.noExiste ? 'Esa factura no existe' : 'No pudimos traer la factura'}
           descripcion={
@@ -156,7 +156,6 @@ export function FacturaDetalleMovil() {
     <Pantalla
       titulo={cliente.nombre}
       descripcion={`DNI ${cliente.dni}`}
-      ancho="contenido"
       onVolver={volver}
       labelVolver="Facturación"
     >

@@ -22,12 +22,7 @@ export function ConfiguracionMovil() {
   const styles = createStyles(theme);
 
   return (
-    <Pantalla
-      titulo="Configuracion"
-      ancho="contenido"
-      onVolver={() => router.back()}
-      labelVolver="Mas"
-    >
+    <Pantalla titulo="Configuracion" onVolver={() => router.back()} labelVolver="Mas">
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.bloque}>
           <View style={styles.encabezado}>

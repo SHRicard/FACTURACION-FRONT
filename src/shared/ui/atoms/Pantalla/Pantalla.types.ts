@@ -1,18 +1,11 @@
 import type { ReactNode } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 
-import type { MaxWidth } from '@/theme';
-
 export interface PantallaProps {
   /** Titulo grande del encabezado. Es el `header` para el lector de pantalla. */
   titulo: string;
   /** Bajada opcional debajo del titulo. */
   descripcion?: string;
-  /**
-   * Tope de ancho del contenido. Por defecto `ancho`, que es lo que quiere una
-   * pantalla de tab (listados, dashboards). Un formulario pasa `formulario`.
-   */
-  ancho?: MaxWidth;
   /** Accion al costado del titulo (ej. un boton "Nueva factura"). */
   accion?: ReactNode;
   /**

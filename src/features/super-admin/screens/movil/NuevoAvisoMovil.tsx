@@ -44,7 +44,6 @@ export function NuevoAvisoMovil() {
     <Pantalla
       titulo="Nuevo aviso"
       descripcion="Le llega como notificación a todos los que tienen la app."
-      ancho="formulario"
       onVolver={() => router.back()}
       labelVolver="Avisos"
     >

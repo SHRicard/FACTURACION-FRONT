@@ -74,7 +74,7 @@ export function MiMarcaMovil() {
 
   if (ficha.cargando && !refresco.refrescando) {
     return (
-      <Pantalla titulo="Mi marca" ancho="contenido" onVolver={volver} labelVolver="Mas">
+      <Pantalla titulo="Mi marca" onVolver={volver} labelVolver="Mas">
         <View style={styles.centro}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
@@ -84,7 +84,7 @@ export function MiMarcaMovil() {
 
   if (!ficha.marca) {
     return (
-      <Pantalla titulo="Mi marca" ancho="contenido" onVolver={volver} labelVolver="Mas">
+      <Pantalla titulo="Mi marca" onVolver={volver} labelVolver="Mas">
         <EstadoVacio
           titulo="No pudimos traer tu marca"
           descripcion={ficha.error ?? undefined}
@@ -101,7 +101,6 @@ export function MiMarcaMovil() {
   return (
     <Pantalla
       titulo="Mi marca"
-      ancho="contenido"
       onVolver={volver}
       labelVolver="Mas"
       accion={

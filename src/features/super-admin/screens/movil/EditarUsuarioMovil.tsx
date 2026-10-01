@@ -31,7 +31,7 @@ export function EditarUsuarioMovil() {
   // Sin los datos no se edita: guardar un formulario vacio pisaria lo que habia.
   if (ficha.cargando || !ficha.detalle) {
     return (
-      <Pantalla titulo="Editar cuenta" ancho="formulario" onVolver={volver} labelVolver="Cuenta">
+      <Pantalla titulo="Editar cuenta" onVolver={volver} labelVolver="Cuenta">
         {ficha.cargando ? (
           <View style={styles.centro}>
             <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -55,7 +55,6 @@ export function EditarUsuarioMovil() {
     <Pantalla
       titulo="Editar cuenta"
       descripcion="Se guarda solo lo que cambies."
-      ancho="formulario"
       onVolver={volver}
       labelVolver="Cuenta"
     >

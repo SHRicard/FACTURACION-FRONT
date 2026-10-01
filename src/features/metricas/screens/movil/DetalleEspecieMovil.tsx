@@ -64,7 +64,6 @@ export function DetalleEspecieMovil() {
     <Pantalla
       titulo={datos?.especie.nombre ?? 'Especie'}
       descripcion="Qué talles y qué artículos salen más."
-      ancho="contenido"
       onVolver={() => router.back()}
       labelVolver="Ventas"
     >

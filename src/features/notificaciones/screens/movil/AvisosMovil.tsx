@@ -47,7 +47,6 @@ export function AvisosMovil() {
     <Pantalla
       titulo="Avisos"
       descripcion="Mantenimientos, novedades y versiones nuevas."
-      ancho="contenido"
       onVolver={volver}
       labelVolver="Volver"
     >

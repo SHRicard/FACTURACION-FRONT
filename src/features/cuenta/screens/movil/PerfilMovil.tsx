@@ -61,7 +61,7 @@ export function PerfilMovil() {
   const tamanoIcono = theme.typography.size.body;
 
   return (
-    <Pantalla titulo="Mi perfil" ancho="contenido" onVolver={volver} labelVolver="Mas">
+    <Pantalla titulo="Mi perfil" onVolver={volver} labelVolver="Mas">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}

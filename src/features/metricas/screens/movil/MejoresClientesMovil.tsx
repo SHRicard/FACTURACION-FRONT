@@ -79,7 +79,6 @@ export function MejoresClientesMovil() {
     <Pantalla
       titulo="Mejores clientes"
       descripcion="A quién cuidar, y a quién se le puede subir el límite."
-      ancho="contenido"
       onVolver={() => router.back()}
       labelVolver="Métricas"
     >

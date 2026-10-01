@@ -87,7 +87,6 @@ export function FrecuenciaCompraMovil() {
     <Pantalla
       titulo="Frecuencia de compra"
       descripcion="Se cuentan visitas, no tickets: dos compras el mismo día son una vez que vino."
-      ancho="contenido"
       onVolver={() => router.back()}
       labelVolver="Métricas"
     >

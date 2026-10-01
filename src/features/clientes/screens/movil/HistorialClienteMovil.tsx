@@ -70,7 +70,7 @@ export function HistorialClienteMovil() {
 
   if (historial.cargando && !refresco.refrescando) {
     return (
-      <Pantalla titulo="Historial" ancho="contenido" onVolver={volver} labelVolver={labelVolver}>
+      <Pantalla titulo="Historial" onVolver={volver} labelVolver={labelVolver}>
         <View style={styles.centro}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
@@ -80,7 +80,7 @@ export function HistorialClienteMovil() {
 
   if (!cliente || !resumen) {
     return (
-      <Pantalla titulo="Historial" ancho="contenido" onVolver={volver} labelVolver={labelVolver}>
+      <Pantalla titulo="Historial" onVolver={volver} labelVolver={labelVolver}>
         <EstadoVacio
           icono={<Receipt size={theme.typography.size.heading} color={theme.colors.textMuted} />}
           titulo={
@@ -172,7 +172,6 @@ export function HistorialClienteMovil() {
     <Pantalla
       titulo={cliente.nombre}
       descripcion={`Historial · DNI ${cliente.dni}`}
-      ancho="contenido"
       onVolver={volver}
       labelVolver={labelVolver}
     >

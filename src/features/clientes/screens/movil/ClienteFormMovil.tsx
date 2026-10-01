@@ -63,7 +63,7 @@ export function ClienteFormMovil() {
   // que la persona escriba encima terminaria pisando lo que ya estaba.
   if (id && ficha.cargando) {
     return (
-      <Pantalla titulo="Editar cliente" ancho="formulario" onVolver={volver} labelVolver="Cliente">
+      <Pantalla titulo="Editar cliente" onVolver={volver} labelVolver="Cliente">
         <View style={styles.centro}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
@@ -75,7 +75,7 @@ export function ClienteFormMovil() {
   // cliente" y guardar pisaria lo que habia.
   if (id && !ficha.cliente) {
     return (
-      <Pantalla titulo="Editar cliente" ancho="formulario" onVolver={volver} labelVolver="Cliente">
+      <Pantalla titulo="Editar cliente" onVolver={volver} labelVolver="Cliente">
         <EstadoVacio
           titulo={ficha.noExiste ? 'Este cliente no existe' : 'No pudimos traer al cliente'}
           descripcion={ficha.noExiste ? undefined : (ficha.error ?? undefined)}
@@ -95,7 +95,6 @@ export function ClienteFormMovil() {
       descripcion={
         esEdicion ? 'Se guarda solo lo que cambies.' : 'Al crearlo se le abre su primera factura.'
       }
-      ancho="formulario"
       onVolver={volver}
       // Editar se abre desde la ficha del cliente; alta, desde el listado.
       labelVolver={esEdicion ? 'Cliente' : 'Clientes'}

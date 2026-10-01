@@ -44,7 +44,7 @@ export function UsuarioDetalleMovil() {
 
   if (ficha.cargando && !refresco.refrescando) {
     return (
-      <Pantalla titulo="Cuenta" ancho="contenido" onVolver={volver} labelVolver="Usuarios">
+      <Pantalla titulo="Cuenta" onVolver={volver} labelVolver="Usuarios">
         <View style={styles.centro}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
@@ -54,7 +54,7 @@ export function UsuarioDetalleMovil() {
 
   if (!ficha.detalle) {
     return (
-      <Pantalla titulo="Cuenta" ancho="contenido" onVolver={volver} labelVolver="Usuarios">
+      <Pantalla titulo="Cuenta" onVolver={volver} labelVolver="Usuarios">
         <EstadoVacio
           titulo={ficha.noExiste ? 'Esta cuenta no existe' : 'No pudimos traer la cuenta'}
           descripcion={
@@ -81,7 +81,6 @@ export function UsuarioDetalleMovil() {
     <Pantalla
       titulo={usuario.nombre}
       descripcion={usuario.email}
-      ancho="contenido"
       onVolver={volver}
       labelVolver="Usuarios"
       accion={

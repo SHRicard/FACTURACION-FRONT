@@ -241,7 +241,6 @@ export function MorososMovil() {
     <Pantalla
       titulo="Morosos"
       descripcion="Los que tienen la factura vencida y todavía deben."
-      ancho="contenido"
       onVolver={() => router.back()}
       labelVolver="Métricas"
     >

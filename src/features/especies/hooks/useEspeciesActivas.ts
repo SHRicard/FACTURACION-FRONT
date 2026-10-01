@@ -10,6 +10,9 @@ import { useListarEspeciesQuery } from '../api/especiesApi';
  * El backend no filtra por `activo`: manda todas y el filtro es del front. Se
  * hace aca, una sola vez, para que ninguna pantalla se olvide y termine
  * ofreciendo una especie que el negocio dio de baja.
+ *
+ * La `cantidad` NO filtra: una especie en 0 se sigue pudiendo elegir. El ticket
+ * nunca se frena por falta de cantidad, el backend solo la deja en 0.
  */
 export function useEspeciesActivas() {
   const consulta = useListarEspeciesQuery();

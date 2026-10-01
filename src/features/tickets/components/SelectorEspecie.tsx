@@ -2,6 +2,7 @@ import { Check, ChevronDown } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
+import { textoCantidad } from '@/features/especies/formato';
 import type { Especie } from '@/features/especies/types';
 import { Modal, Text } from '@/shared/ui/atoms';
 import { useTheme, type Theme } from '@/theme';
@@ -70,6 +71,10 @@ export function SelectorEspecie({ especies, valor, onCambiar, error }: SelectorE
         <ScrollView style={styles.lista} showsVerticalScrollIndicator={false}>
           {especies.map((especie) => {
             const activa = especie.id === valor;
+            // Cuantas le quedan, como dato. Nunca deshabilita la opcion: una
+            // especie en 0 se elige igual y el ticket se carga igual.
+            const cantidad =
+              especie.cantidad !== undefined ? textoCantidad(especie.cantidad) : null;
 
             return (
               <Pressable
@@ -81,7 +86,7 @@ export function SelectorEspecie({ especies, valor, onCambiar, error }: SelectorE
                 style={({ pressed }) => [styles.opcion, pressed && styles.presionada]}
                 accessibilityRole="radio"
                 accessibilityState={{ selected: activa }}
-                accessibilityLabel={especie.nombre}
+                accessibilityLabel={cantidad ? `${especie.nombre}, ${cantidad}` : especie.nombre}
               >
                 <View style={styles.textos}>
                   <Text variant="body" weight={activa ? 'bold' : 'regular'}>
@@ -93,6 +98,11 @@ export function SelectorEspecie({ especies, valor, onCambiar, error }: SelectorE
                     </Text>
                   ) : null}
                 </View>
+                {cantidad ? (
+                  <Text variant="caption" tone="muted">
+                    {cantidad}
+                  </Text>
+                ) : null}
                 {activa ? <Check size={20} color={theme.colors.primary} /> : null}
               </Pressable>
             );

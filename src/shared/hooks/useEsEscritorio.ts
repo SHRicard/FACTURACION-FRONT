@@ -13,8 +13,8 @@ import { useBreakpoint } from './useBreakpoint';
  * Es el unico lugar donde vive esa pregunta: el umbral es un token del theme
  * (`breakpointEscritorio`), asi que moverlo es cambiar un valor y nada mas.
  *
- * ⚠️ Esto NO es para ajustar anchos ni columnas —para eso estan `Container` y
- * el `elegir()` de `useBreakpoint`—. Es para el caso en que la pantalla es otra
+ * ⚠️ Esto NO es para ajustar anchos ni columnas —para eso esta el `elegir()`
+ * de `useBreakpoint`—. Es para el caso en que la pantalla es otra
  * composicion: una tabla en vez de tarjetas, un master-detail en vez de empujar
  * una pantalla nueva. Ver la seccion "Movil y escritorio" en CLAUDE.md.
  *

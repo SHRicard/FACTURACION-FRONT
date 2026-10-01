@@ -257,7 +257,6 @@ export function DeudoresMovil() {
     <Pantalla
       titulo="Deudores"
       descripcion="Todos los que deben algo, vencido o no."
-      ancho="contenido"
       onVolver={() => router.back()}
       labelVolver="Métricas"
     >

@@ -1,0 +1,1 @@
+export { PantallaError } from './PantallaError';

@@ -1,4 +1,10 @@
+export { CampoEmail } from './CampoEmail';
 export { ChipFiltro } from './ChipFiltro';
+export { FacturaDelHistorial } from './FacturaDelHistorial';
 export { FilaCliente } from './FilaCliente';
+export { MovimientoHistorial } from './MovimientoHistorial';
+export { ResumenHistorial } from './ResumenHistorial';
+export { SeccionFormulario } from './SeccionFormulario';
 export { SelectorVentanaPago } from './SelectorVentanaPago';
 export { TarjetaFacturaAbierta } from './TarjetaFacturaAbierta';
+export { VistaPreviaCliente } from './VistaPreviaCliente';

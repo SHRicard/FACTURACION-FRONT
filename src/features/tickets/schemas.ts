@@ -44,24 +44,33 @@ export const ticketSchema = z
   .transform(aId);
 
 /**
- * La factura del periodo con los totales ya recalculados.
+ * La factura activa del cliente con los totales ya recalculados. Es siempre la
+ * misma aunque este vencida: el ticket se suma a lo que ya debe.
  *
- * Los cinco totales son del PERIODO ENTERO, no de este ticket. El que se
+ * Los cinco totales son de la FACTURA ENTERA, no de este ticket. El que se
  * muestra es `saldo`.
  */
 export const facturaTicketSchema = z
   .object({
     _id: z.string(),
-    estado: z.enum(['abierta', 'cerrada', 'pagada', 'anulada']),
+    /** String y no enum: un estado nuevo del backend no rompe el ticket (K8). */
+    estado: z.string(),
     estadoVisible: z.string(),
     venceEl: z.string(),
-    diasParaVencer: z.number(),
+    /** null = sin compras: su fecha es provisoria (K3). */
+    diasParaVencer: z.number().nullable(),
     cantidadTickets: z.number(),
     totalMercaderia: z.number(),
     totalPagadoEnTickets: z.number(),
     totalFiado: z.number(),
     totalPagos: z.number(),
     saldo: z.number(),
+    /**
+     * Si el próximo ticket vuelve a elegir el vencimiento: la primera compra, o
+     * una compra fiada sobre una factura que quedó en $0 (K15). Opcional
+     * mientras haya backs que no lo mandan.
+     */
+    eligeVencimiento: z.boolean().optional(),
   })
   .transform(aId);
 
@@ -74,6 +83,11 @@ export const respuestaTicketSchema = z.object({
   factura: facturaTicketSchema,
   /** Aviso de limite de credito. El ticket se guardo IGUAL: no es un error. */
   warning: z.string().nullable().default(null),
+  /**
+   * true = ese ticket ya se había cargado con la misma clave (reintento); no
+   * se volvió a cargar.
+   */
+  repetido: z.boolean().default(false),
 });
 
 /** Lo que devuelve la anulacion: el ticket tachado y la factura sin el. */
@@ -82,6 +96,17 @@ export const respuestaAnulacionSchema = z.object({
   ticket: ticketSchema,
   factura: facturaTicketSchema,
 });
+
+/**
+ * Topes de un ticket. Son los mismos que valida el back (models/Ticket.ts
+ * `LIMITES_TICKET`, K16): si cambian allá, cambian acá.
+ */
+export const LIMITES_TICKET = {
+  renglones: 100,
+  cantidad: 9999,
+  precioUnitario: 100_000_000,
+  total: 1_000_000_000,
+} as const;
 
 /**
  * Un renglon del formulario.
@@ -97,8 +122,15 @@ export const itemFormSchema = z.object({
   cantidad: z
     .string()
     .regex(/^\d+$/, 'La cantidad va entera.')
-    .refine((valor) => Number(valor) >= 1, 'De 1 para arriba.'),
-  precioUnitario: z.string().regex(/^\d+$/, 'Poné el precio, solo números.'),
+    .refine((valor) => Number(valor) >= 1, 'De 1 para arriba.')
+    .refine((valor) => Number(valor) <= LIMITES_TICKET.cantidad, 'Hasta 9.999.'),
+  precioUnitario: z
+    .string()
+    .regex(/^\d+$/, 'Poné el precio, solo números.')
+    .refine(
+      (valor) => Number(valor) <= LIMITES_TICKET.precioUnitario,
+      'El precio va de $0 a $100.000.000.',
+    ),
 });
 
 /** Lo que suma un renglon. Vale para el form (strings) y para el resumen. */
@@ -107,9 +139,17 @@ export const subtotalDe = (cantidad: string, precioUnitario: string): number =>
 
 export const ticketFormSchema = z
   .object({
-    items: z.array(itemFormSchema).min(1, 'El ticket necesita al menos un ítem.'),
+    items: z
+      .array(itemFormSchema)
+      .min(1, 'El ticket necesita al menos un ítem.')
+      .max(LIMITES_TICKET.renglones, 'Un ticket tiene hasta 100 artículos.'),
     /** Lo que deja en el momento. Vacio = se fia todo. */
     pagado: z.string().regex(/^\d*$/, 'Solo números, sin puntos.'),
+    /**
+     * La fecha que acordo con el cliente, `aaaa-mm-dd`. Vacio = sale de su
+     * ventana de pago. Solo vale en el primer ticket de la factura.
+     */
+    venceEl: z.string(),
   })
   .superRefine((datos, ctx) => {
     const total = datos.items.reduce(
@@ -124,6 +164,15 @@ export const ticketFormSchema = z
         code: 'custom',
         path: ['pagado'],
         message: 'Está dejando más de lo que suma el ticket.',
+      });
+    }
+
+    // Se muestra bajo el último precio: es el que lo pasó del tope.
+    if (total > LIMITES_TICKET.total) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['items', datos.items.length - 1, 'precioUnitario'],
+        message: 'El ticket no puede pasar de $1.000.000.000.',
       });
     }
   });

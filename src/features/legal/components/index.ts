@@ -1,0 +1,1 @@
+export { CuerpoDocumento } from './CuerpoDocumento';

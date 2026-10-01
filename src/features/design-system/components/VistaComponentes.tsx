@@ -271,23 +271,12 @@ export function VistaComponentes() {
           </Muestra>
         ))}
 
-        <Muestra codigo='<Container ancho="formulario" | "contenido" | "ancho" />'>
+        <Muestra codigo="<Container /> → 100% del ancho, margen a cada lado">
           <View style={styles.filaToken}>
-            {Object.entries(theme.layout.maxWidth)
-              .filter(([nombre]) => nombre !== 'completo')
-              .map(([nombre, valor]) => (
-                <View key={nombre} style={styles.filaToken}>
-                  <Text variant="caption" tone="muted" style={styles.etiquetaToken}>
-                    {nombre} · max {valor}px
-                  </Text>
-                  <View
-                    style={[
-                      styles.barra,
-                      { width: Math.min(valor / 4, 240), backgroundColor: theme.colors.border },
-                    ]}
-                  />
-                </View>
-              ))}
+            <Text variant="caption" tone="muted" style={styles.etiquetaToken}>
+              margenPantalla · {theme.layout.margenPantalla}px
+            </Text>
+            <View style={[styles.barra, { width: theme.layout.margenPantalla }]} />
           </View>
         </Muestra>
       </Seccion>

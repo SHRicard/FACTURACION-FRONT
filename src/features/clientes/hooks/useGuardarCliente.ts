@@ -79,7 +79,12 @@ function soloCambios(original: ClienteForm, actual: ClienteForm): Partial<DatosC
 }
 
 interface OpcionesGuardar {
-  /** Sin id es un alta; con id, una edicion. */
+  /**
+   * El id de la ruta: con id es una edición aunque el cliente no haya llegado.
+   * Sin id es un alta.
+   */
+  clienteId?: string;
+  /** Los datos actuales del cliente, cuando es una edicion y ya llegaron. */
   cliente?: ClienteDetalle | null;
 }
 
@@ -90,12 +95,14 @@ interface OpcionesGuardar {
  * errores son identicos: lo unico que cambia es el endpoint y a donde se va
  * despues de guardar.
  */
-export function useGuardarCliente({ cliente }: OpcionesGuardar = {}) {
+export function useGuardarCliente({ clienteId, cliente }: OpcionesGuardar = {}) {
   const router = useRouter();
   const [crear, estadoCrear] = useCrearClienteMutation();
   const [editar, estadoEditar] = useEditarClienteMutation();
 
-  const esEdicion = Boolean(cliente);
+  // Sale del id y no de los datos: una ficha caida no convierte la edicion en
+  // un alta (que crearia al cliente de nuevo).
+  const esEdicion = Boolean(clienteId);
 
   const form = useForm<ClienteForm>({
     resolver: zodResolver(clienteFormSchema),
@@ -114,7 +121,9 @@ export function useGuardarCliente({ cliente }: OpcionesGuardar = {}) {
 
   const enviar = form.handleSubmit(async (datos) => {
     try {
-      if (cliente) {
+      if (esEdicion) {
+        // Sin los datos no hay contra que comparar: la pantalla ya corta antes.
+        if (!cliente) return;
         const cambios = soloCambios(aFormulario(cliente), datos);
         // Nada que mandar: un PUT vacio seria una request al pedo.
         if (Object.keys(cambios).length > 0) {
@@ -130,7 +139,7 @@ export function useGuardarCliente({ cliente }: OpcionesGuardar = {}) {
       router.replace(`/admin/clientes/${creado.id}`);
     } catch (fallo) {
       const error = interpretarError(fallo);
-      aplicarDetalles(form, error?.detalles ?? null);
+      aplicarDetalles(form, error);
 
       // El 409 es "ese DNI ya existe": va bajo el campo DNI y no en el cartel
       // de arriba, que es donde nadie lo relaciona con lo que tiene que corregir.
@@ -148,9 +157,9 @@ export function useGuardarCliente({ cliente }: OpcionesGuardar = {}) {
     esEdicion,
     cargando: estadoCrear.isLoading || estadoEditar.isLoading,
     /**
-     * El 400 con detalles y el 409 ya se muestran bajo su campo: repetirlos
+     * El 400 con campos y el 409 ya se muestran bajo su campo: repetirlos
      * arriba hace que la persona lea el mismo texto dos veces.
      */
-    error: error && !error.detalles && error.status !== 409 ? error.mensaje : null,
+    error: error && !error.campos && error.status !== 409 ? error.mensaje : null,
   };
 }

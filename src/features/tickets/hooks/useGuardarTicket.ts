@@ -1,18 +1,28 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 
-import { interpretarError } from '@/shared/utils';
+import {
+  aplicarDetalles,
+  formatearMoneda,
+  interpretarError,
+  nuevaClaveIdempotencia,
+  quedoEnDuda,
+  volverDelFormulario,
+} from '@/shared/utils';
 
 import {
   useCrearTicketMutation,
   useEditarTicketMutation,
   useTicketDetalleQuery,
 } from '../api/ticketsApi';
-import { volverDelFormulario } from '../navegar';
-import { itemFormSchema, subtotalDe, ticketFormSchema } from '../schemas';
-import type { ItemForm, ItemNuevo, Ticket, TicketForm } from '../types';
+import { irALaFactura } from '../navegar';
+import { excedenteDePagos } from '../saldo';
+import { itemFormSchema, LIMITES_TICKET, subtotalDe, ticketFormSchema } from '../schemas';
+import type { FacturaEnCurso, ItemForm, ItemNuevo, Ticket, TicketForm } from '../types';
+
+import { useSalidaConBorrador } from './useSalidaConBorrador';
 
 /** Un renglon en blanco. La cantidad arranca en 1: es lo que mas se repite. */
 const itemVacio = (especie = ''): ItemForm => ({
@@ -34,6 +44,8 @@ function aFormulario(ticket: Ticket): TicketForm {
       precioUnitario: String(item.precioUnitario),
     })),
     pagado: ticket.pagado ? String(ticket.pagado) : '',
+    // La fecha no se corrige desde el ticket: se reprograma desde la factura.
+    venceEl: '',
   };
 }
 
@@ -41,12 +53,15 @@ function aFormulario(ticket: Ticket): TicketForm {
 export interface ResultadoTicket {
   /** Lo que quedo debiendo por este ticket. */
   faltante: number;
-  /** El saldo del periodo, ya recalculado. */
+  /** El saldo de la factura, ya recalculado. */
   saldo: number;
   /** Aviso de limite de credito, o null. El ticket se guardo igual. */
   warning: string | null;
-  /** El backend cerro el periodo vencido y abrio uno nuevo en este mismo request. */
-  periodoNuevo: boolean;
+  /**
+   * El ticket ya se habia cargado con la misma clave (un reintento con mala
+   * señal): no se volvio a cargar, quedo el que ya estaba.
+   */
+  repetido: boolean;
 }
 
 const aNumero = (valor: string) => Number(valor) || 0;
@@ -63,16 +78,25 @@ function aBody(item: ItemForm): ItemNuevo {
   return cuerpo;
 }
 
+/**
+ * Si el back rechazo la clave, reusarla no sirve de nada: el proximo intento
+ * va con una nueva. Ante cualquier otro error (sin red, tope de tiempo,
+ * respuesta rara) se reusa, que es lo que evita el ticket duplicado.
+ */
+const CODIGOS_CLAVE_QUEMADA = ['IDEMPOTENCIA_CONFLICTO', 'IDEMPOTENCIA_CLAVE_INVALIDA'];
+
 interface OpcionesGuardar {
   clienteId: string;
   /** Sin id es un alta; con id, una correccion. */
   ticketId?: string;
   /**
-   * Id de la factura abierta del cliente, la que la ficha tiene en pantalla.
-   * Sirve para dos cosas: detectar que el backend renovo el periodo, y saber si
-   * este ticket todavia se puede tocar.
+   * La ficha del cliente, o null si no llego. Trae la factura activa, la que
+   * dice si el ticket todavia se puede tocar, si se elige el vencimiento y
+   * cuanto dejo el cliente a cuenta.
    */
-  facturaAbiertaId?: string | null;
+  cliente: { facturaAbierta?: FacturaEnCurso | null } | null;
+  /** Se entro desde la factura: "Ver la factura" vuelve en vez de apilarla. */
+  desdeFactura: boolean;
 }
 
 /**
@@ -83,7 +107,7 @@ interface OpcionesGuardar {
  * son una lista que crece, no un formulario fijo — el administrador esta parado
  * con el cliente enfrente y cada toque cuenta.
  */
-export function useGuardarTicket({ clienteId, ticketId, facturaAbiertaId }: OpcionesGuardar) {
+export function useGuardarTicket({ clienteId, ticketId, cliente, desdeFactura }: OpcionesGuardar) {
   const router = useRouter();
   const [crear, estadoCrear] = useCrearTicketMutation();
   const [editar, estadoEditar] = useEditarTicketMutation();
@@ -94,9 +118,18 @@ export function useGuardarTicket({ clienteId, ticketId, facturaAbiertaId }: Opci
   /** Lo que se muestra despues de guardar, cuando hay algo que decir. */
   const [resultado, setResultado] = useState<ResultadoTicket | null>(null);
 
+  /**
+   * Clave de idempotencia del alta (K1). Se crea en el primer envio y se REUSA
+   * en cada reintento: si el primero llego y la respuesta no, el segundo
+   * devuelve el mismo ticket en vez de cargarlo dos veces.
+   */
+  const clave = useRef<string | null>(null);
+
+  const facturaEnCurso = cliente?.facturaAbierta ?? null;
+
   const form = useForm<TicketForm>({
     resolver: zodResolver(ticketFormSchema),
-    defaultValues: { items: [itemVacio()], pagado: '' },
+    defaultValues: { items: [itemVacio()], pagado: '', venceEl: '' },
     mode: 'onBlur',
   });
 
@@ -122,6 +155,42 @@ export function useGuardarTicket({ clienteId, ticketId, facturaAbiertaId }: Opci
   const dejaAhora = aNumero(pagado ?? '');
   const quedaDebiendo = Math.max(0, total - dejaAhora);
 
+  // Pregunta antes de tirar lo cargado al salir con la flecha o el gesto (U5).
+  const salida = useSalidaConBorrador(form.formState.isDirty);
+  const { permitirSalida } = salida;
+
+  /*
+   * El vencimiento se acuerda con el primer ticket de la factura, o con una
+   * compra fiada sobre una factura que quedo en $0 (K15): el back lo dice con
+   * `eligeVencimiento` (sin el dato, la regla vieja: sin tickets todavia). La
+   * ficha trae la factura en curso, asi que no hace falta otra request.
+   *
+   * Sobre una factura en $0 que ya tiene tickets, la fecha solo se aplica si
+   * este ticket deja algo fiado: es la misma regla del back (tickets.ts:254).
+   */
+  const reeligeVencimiento = facturaEnCurso
+    ? (facturaEnCurso.eligeVencimiento ?? facturaEnCurso.cantidadTickets === 0)
+    : false;
+  const eligeVencimiento =
+    !ticketId &&
+    cliente !== null &&
+    (!facturaEnCurso ||
+      (reeligeVencimiento && (facturaEnCurso.cantidadTickets === 0 || quedaDebiendo > 0)));
+  /** La factura a la que se suma este ticket, con su fecha ya fijada. */
+  const facturaQueSigue =
+    !ticketId && facturaEnCurso && !reeligeVencimiento ? facturaEnCurso : null;
+
+  /*
+   * Corrigiendo, cuanto quedaria en negativo la factura con el faltante nuevo
+   * (K2). No hay saldo a favor: si lo pagado a cuenta supera lo fiado, el back
+   * lo rechaza, asi que se avisa antes. Los totales de la ficha pueden estar
+   * viejos; el 400 SALDO_NEGATIVO del back sigue siendo la fuente de verdad.
+   */
+  const excedenteSaldo =
+    ticketId && ticket && facturaEnCurso
+      ? excedenteDePagos(facturaEnCurso, { sale: ticket.faltante, entra: quedaDebiendo })
+      : 0;
+
   /**
    * Si se puede sumar otro renglon.
    *
@@ -144,8 +213,7 @@ export function useGuardarTicket({ clienteId, ticketId, facturaAbiertaId }: Opci
    * esta en ella, su factura ya se cerro.
    */
   const sePuedeTocar =
-    !ticket ||
-    (!ticket.anulado && Boolean(facturaAbiertaId) && ticket.factura === facturaAbiertaId);
+    !ticket || (!ticket.anulado && facturaEnCurso !== null && ticket.factura === facturaEnCurso.id);
 
   /**
    * El renglon nuevo hereda la especie del anterior: lo mas comun es llevarse
@@ -170,31 +238,55 @@ export function useGuardarTicket({ clienteId, ticketId, facturaAbiertaId }: Opci
     setValue('pagado', String(total), { shouldValidate: true });
   }, [setValue, total]);
 
-  const enviar = form.handleSubmit(async (datos) => {
+  const guardar = async (datos: TicketForm) => {
+    // Corrigiendo: si con el faltante nuevo lo pagado a cuenta supera lo
+    // fiado, no se manda. El error va en 'pagado', que es lo que se toca para
+    // arreglarlo (o se anula el pago desde la factura).
+    if (ticketId && ticket && facturaEnCurso) {
+      const totalNuevo = datos.items.reduce(
+        (suma, item) => suma + subtotalDe(item.cantidad, item.precioUnitario),
+        0,
+      );
+      const faltanteNuevo = Math.max(0, totalNuevo - aNumero(datos.pagado));
+      const excedente = excedenteDePagos(facturaEnCurso, {
+        sale: ticket.faltante,
+        entra: faltanteNuevo,
+      });
+      if (excedente > 0) {
+        form.setError('pagado', {
+          type: 'saldo',
+          message: `El cliente ya dejó ${formatearMoneda(facturaEnCurso.totalPagos)} a cuenta y la factura quedaría en −${formatearMoneda(excedente)}. Primero anulá el pago desde la factura.`,
+        });
+        return;
+      }
+    }
+
     const cuerpo = {
       items: datos.items.map(aBody),
       // En la correccion el `pagado` viaja SIEMPRE, incluso en cero: omitirlo
       // conserva el anterior, y si el ticket se achico, ese anterior ya no
       // entra y el backend responde 400.
       ...(ticketId || datos.pagado ? { pagado: aNumero(datos.pagado) } : {}),
+      // La fecha acordada solo viaja cuando se puede elegir, y solo si se
+      // eligio una.
+      ...(eligeVencimiento && datos.venceEl ? { venceEl: datos.venceEl } : {}),
     };
 
     try {
       const respuesta = ticketId
         ? await editar({ id: ticketId, clienteId, ticket: cuerpo }).unwrap()
-        : await crear({ clienteId, ticket: cuerpo }).unwrap();
-
-      /*
-       * La factura que vuelve puede NO ser la que estaba en pantalla: si venia
-       * vencida y con movimiento, el backend la cerro y abrio la del periodo
-       * siguiente dentro de este mismo request. Hay que usar siempre la de la
-       * respuesta, y avisar cuando cambio.
-       */
-      const periodoNuevo = Boolean(facturaAbiertaId) && respuesta.factura.id !== facturaAbiertaId;
+        : await crear({
+            clienteId,
+            ticket: cuerpo,
+            claveIdempotencia: (clave.current ??= nuevaClaveIdempotencia()),
+          }).unwrap();
+      // Guardado: el proximo ticket es otro pedido y lleva otra clave.
+      clave.current = null;
 
       // Sin nada que contar no se interrumpe: se vuelve derecho a donde se
       // vino, que ya tiene el saldo nuevo porque la mutacion invalido sus tags.
-      if (!respuesta.warning && !periodoNuevo) {
+      if (!respuesta.warning && !respuesta.repetido) {
+        permitirSalida();
         volverDelFormulario(router, clienteId);
         return;
       }
@@ -203,24 +295,57 @@ export function useGuardarTicket({ clienteId, ticketId, facturaAbiertaId }: Opci
         faltante: respuesta.ticket.faltante,
         saldo: respuesta.factura.saldo,
         warning: respuesta.warning,
-        periodoNuevo,
+        repetido: respuesta.repetido,
       });
-    } catch {
-      // El error queda en el estado de la mutacion y se muestra desde ahi: los
-      // mensajes del backend vienen redactados y numerando el renglon ("El item
-      // 2 necesita un nombre"), asi que van tal cual en el cartel de arriba. El
-      // catch existe para que la promesa no quede sin atender.
+    } catch (fallo) {
+      // El error queda en el estado de la mutacion y el cartel de arriba lo
+      // muestra desde ahi. Lo que el back marca por campo (`detalles.campos`:
+      // 'items.1.precioUnitario', 'pagado') baja ademas al input que
+      // corresponde (K11, K16).
+      const detalle = interpretarError(fallo);
+      aplicarDetalles(form, detalle);
+      // Un 409 de clave ya invalido la ficha y las facturas (invalidatesTags
+      // corre igual con el error manejado); el proximo intento va con otra.
+      if (detalle?.codigo && CODIGOS_CLAVE_QUEMADA.includes(detalle.codigo)) {
+        clave.current = null;
+      }
       setResultado(null);
     }
-  });
+  };
+
+  // `handleSubmit` corre recien al tocar Guardar, no durante el render:
+  // `guardar` toca la ref de la clave y react-hooks/refs no deja pasarla a
+  // nada que se ejecute mientras se dibuja.
+  const enviar = () => form.handleSubmit(guardar)();
 
   /** Cierra el aviso posterior al guardado y sigue viaje. */
   const cerrarResultado = useCallback(() => {
     setResultado(null);
+    permitirSalida();
     volverDelFormulario(router, clienteId);
-  }, [router, clienteId]);
+  }, [permitirSalida, router, clienteId]);
 
   const errorGuardado = interpretarError(ticketId ? estadoEditar.error : estadoCrear.error);
+
+  /** A la factura, para anular el pago que no deja achicar el ticket (K2). */
+  const idFactura = facturaEnCurso?.id ?? ticket?.factura;
+  const verLaFactura = useCallback(() => {
+    if (idFactura) irALaFactura(router, idFactura, desdeFactura);
+  }, [idFactura, router, desdeFactura]);
+
+  /*
+   * El cartel general. Sin respuesta en el alta no se sabe si se guardo, pero
+   * reintentar con la misma clave no duplica: se dice eso y no "fallo". El
+   * mensaje del back queda como red de seguridad aunque haya bajado a los
+   * campos, porque los errores de 'items' raiz no se dibujan en ningun input.
+   */
+  let error: string | null = null;
+  if (errorGuardado) {
+    error =
+      !ticketId && quedoEnDuda(errorGuardado)
+        ? 'No sabemos si se guardó. Tocá Guardar de nuevo: no se va a duplicar.'
+        : errorGuardado.mensaje;
+  }
 
   return {
     form,
@@ -234,8 +359,11 @@ export function useGuardarTicket({ clienteId, ticketId, facturaAbiertaId }: Opci
     sePuedeTocar,
     renglones: renglones.fields,
     agregar,
-    /** El boton de sumar renglon se habilita recien con todo lo de arriba cargado. */
-    puedeAgregar: renglonesCompletos,
+    /**
+     * El boton de sumar renglon se habilita recien con todo lo de arriba
+     * cargado, y hasta el tope de renglones del back (K16).
+     */
+    puedeAgregar: renglonesCompletos && renglones.fields.length < LIMITES_TICKET.renglones,
     quitar,
     /** Solo con mas de uno se puede borrar. */
     puedeQuitar: renglones.fields.length > 1,
@@ -245,8 +373,25 @@ export function useGuardarTicket({ clienteId, ticketId, facturaAbiertaId }: Opci
     pagarTodo,
     enviar,
     guardando: estadoCrear.isLoading || estadoEditar.isLoading,
-    error: errorGuardado?.mensaje ?? null,
+    error,
     resultado,
     cerrarResultado,
+    /** La factura activa del cliente, o null si no tiene o si la ficha no llego. */
+    facturaEnCurso,
+    /** Se muestra el campo de la fecha acordada (K15). */
+    eligeVencimiento,
+    /** Se suma a una factura con la fecha ya fijada: para el "vence el …". */
+    facturaQueSigue,
+    /** La correccion dejaria la factura en negativo: va con "Ver la factura". */
+    saldoNegativo: excedenteSaldo > 0 || errorGuardado?.codigo === 'SALDO_NEGATIVO',
+    verLaFactura,
+    /** "¿Descartar el ticket?" al salir con algo cargado sin guardar. */
+    salida: {
+      preguntando: salida.preguntando,
+      descartar: salida.descartar,
+      seguir: salida.seguir,
+    },
+    /** Para las salidas que cierran el formulario (anular): no preguntan. */
+    permitirSalida,
   };
 }

@@ -1,10 +1,14 @@
 import { StyleSheet } from 'react-native';
 
-export const createStyles = () =>
+import type { Theme } from '@/theme';
+
+export const createStyles = (theme: Theme) =>
   StyleSheet.create({
     base: {
-      // Centrado: en una ventana ancha el contenido queda al medio, no pegado
-      // a la izquierda.
-      alignSelf: 'center',
+      // `width` explicito y no `alignSelf: 'stretch'`: varias pantallas lo montan
+      // dentro de un padre con `alignItems: 'center'`, que si no lo encogeria al
+      // ancho de su contenido.
+      width: '100%',
+      paddingHorizontal: theme.layout.margenPantalla,
     },
   });

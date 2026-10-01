@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { AjusteNotificaciones } from '@/features/notificaciones/components';
 import {
   Pantalla,
   SelectorEstiloCabecera,
@@ -21,12 +22,7 @@ export function ConfiguracionMovil() {
   const styles = createStyles(theme);
 
   return (
-    <Pantalla
-      titulo="Configuracion"
-      ancho="contenido"
-      onVolver={() => router.back()}
-      labelVolver="Mas"
-    >
+    <Pantalla titulo="Configuracion" onVolver={() => router.back()} labelVolver="Mas">
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.bloque}>
           <View style={styles.encabezado}>
@@ -39,6 +35,9 @@ export function ConfiguracionMovil() {
           </View>
           <SelectorModo />
         </View>
+
+        {/* En web o en un emulador no se dibuja: ahi no llegan. */}
+        <AjusteNotificaciones />
 
         <View style={styles.bloque}>
           <View style={styles.encabezado}>

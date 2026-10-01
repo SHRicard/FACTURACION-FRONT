@@ -51,7 +51,7 @@ export function DesignSystemScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Container ancho="ancho" style={styles.contenido}>
+        <Container style={styles.contenido}>
           <View style={styles.titulo}>
             <Pressable
               onPress={volver}

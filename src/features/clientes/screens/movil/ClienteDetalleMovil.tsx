@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Pencil, Receipt, Wallet } from 'lucide-react-native';
+import { Pencil, Receipt, ScrollText, Wallet } from 'lucide-react-native';
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 
 import { useRefrescar } from '@/shared/hooks';
@@ -28,7 +28,7 @@ function Dato({ etiqueta, valor }: { etiqueta: string; valor: string }) {
 }
 
 /**
- * Ficha de un cliente: cuanto debe, su factura del periodo y sus datos.
+ * Ficha de un cliente: cuanto debe, su factura en curso y sus datos.
  *
  * La deuda va arriba de todo porque es lo que se viene a mirar: el resto es
  * contexto.
@@ -45,7 +45,7 @@ export function ClienteDetalleMovil() {
 
   if (ficha.cargando && !refresco.refrescando) {
     return (
-      <Pantalla titulo="Cliente" ancho="contenido" onVolver={volver} labelVolver="Clientes">
+      <Pantalla titulo="Cliente" onVolver={volver} labelVolver="Clientes">
         <View style={styles.centro}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
@@ -55,7 +55,7 @@ export function ClienteDetalleMovil() {
 
   if (!ficha.cliente) {
     return (
-      <Pantalla titulo="Cliente" ancho="contenido" onVolver={volver} labelVolver="Clientes">
+      <Pantalla titulo="Cliente" onVolver={volver} labelVolver="Clientes">
         <EstadoVacio
           titulo={ficha.noExiste ? 'Este cliente no existe' : 'No pudimos traer el cliente'}
           descripcion={
@@ -82,7 +82,6 @@ export function ClienteDetalleMovil() {
     <Pantalla
       titulo={cliente.nombre}
       descripcion={`DNI ${cliente.dni}`}
-      ancho="contenido"
       onVolver={volver}
       labelVolver="Clientes"
       accion={
@@ -112,7 +111,7 @@ export function ClienteDetalleMovil() {
             {formatearMoneda(cliente.deuda)}
           </Text>
           <Text variant="caption" tone="muted">
-            Suma todas sus facturas con saldo, no solo la del mes.
+            Lo que quedó sin pagar de su factura en curso.
           </Text>
           {superaLimite ? (
             <Text variant="caption" tone="warning">
@@ -138,29 +137,33 @@ export function ClienteDetalleMovil() {
         )}
 
         <View style={styles.acciones}>
-          {/*
-            Registrar pago todavia no tiene endpoint: va apagado y con el motivo
-            escrito, en vez de no estar. Asi se ve que el lugar existe y no
-            parece que faltara algo.
-          */}
           <Button
             label="Cargar ticket"
             onPress={() => router.push(`/admin/clientes/${cliente.id}/ticket`)}
             leftIcon={<Receipt size={16} color={theme.colors.onPrimary} />}
             style={styles.accion}
           />
-          <Button
-            label="Registrar pago"
-            variant="secondary"
-            disabled
-            onPress={() => {}}
-            leftIcon={<Wallet size={16} color={theme.colors.primary} />}
-            style={styles.accion}
-          />
+          {/* Sin deuda no hay nada que cobrar: el boton no aparece, en vez de
+              abrir un formulario que el backend rechazaria con un 400. */}
+          {cliente.deuda > 0 ? (
+            <Button
+              label="Registrar pago"
+              variant="secondary"
+              onPress={() => router.push(`/admin/clientes/${cliente.id}/pago`)}
+              leftIcon={<Wallet size={16} color={theme.colors.primary} />}
+              style={styles.accion}
+            />
+          ) : null}
         </View>
-        <Text variant="caption" tone="muted">
-          Registrar pagos se habilita cuando este su endpoint.
-        </Text>
+
+        {/* Todo lo que compro y pago, y como cumplio cada factura. */}
+        <Button
+          label="Ver historial completo"
+          variant="ghost"
+          onPress={() => router.push(`/admin/clientes/${cliente.id}/historial`)}
+          leftIcon={<ScrollText size={16} color={theme.colors.primary} />}
+          fullWidth
+        />
 
         <View style={styles.datos}>
           <Dato

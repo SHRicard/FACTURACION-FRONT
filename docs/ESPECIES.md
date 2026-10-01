@@ -28,9 +28,10 @@ TICKET    (se escribe al vender)     "Pantalón largo"   talle 34   $50.000   �
                                      "Media deportiva"  talle M    $ 3.000   → media
 ```
 
-**No hay inventario, no hay stock, no hay que cargar productos de antemano.** El
-administrador escribe lo que el cliente se lleva y elige la especie de una lista
-corta.
+**No hay que cargar productos de antemano.** El administrador escribe lo que el
+cliente se lleva y elige la especie de una lista corta. Si quiere llevar la
+cuenta de cuántas unidades le quedan, le pone una `cantidad` a la especie y los
+tickets la van descontando (ver [La cantidad](#la-cantidad-opcional)).
 
 ### Para qué sirve entonces
 
@@ -50,6 +51,60 @@ mercadería que ya no existe y las métricas de ese período se irían con ella.
 
 El backend te frena solo, con un `400` que dice cuántos tickets la nombran. En
 el front eso se traduce en: **el botón de borrar ofrece desactivar cuando falla**.
+
+## La cantidad (opcional)
+
+Además de `nombre` y `descripcion`, la especie puede llevar una `cantidad`: un
+número que el administrador anota a mano, por ejemplo `100`.
+
+- **Es opcional.** Una especie sin cantidad es tan válida como una con cantidad.
+- **Es un entero desde 0.** `0` es un valor válido y distinto de "sin cantidad".
+- **Los tickets la descuentan solos.** El front no hace nada: el backend resta
+  lo que se lleva cada ticket de la especie de cada renglón.
+- **Nunca frena una venta.** No baja de 0 y nunca da error por falta de
+  cantidad: el ticket se carga siempre.
+
+### Cómo se mueve con los tickets
+
+| Pasa esto | La cantidad de la especie |
+| --- | --- |
+| Se carga un ticket | Baja lo que se lleva. Dos renglones de la misma especie se suman |
+| Se lleva más de lo que hay | Queda en `0`. Había 2 y se lleva 3 → `0` |
+| La especie ya estaba en `0` | No cambia. Había 0 y se lleva 3 → sigue en `0` |
+| La especie no tiene cantidad | No cambia, y tampoco se le crea una |
+| Se corrige el ticket (`PUT /tickets/:id`) | Queda como si se hubiera cargado bien de entrada |
+| Se anula el ticket (`DELETE /tickets/:id`) | Vuelve lo que ese ticket había descontado |
+
+Lo que vuelve al corregir o anular es **lo que se descontó de verdad**, no lo
+que decía el ticket. Ejemplo: había 2 pantalones y se cargó un ticket de 3. La
+cantidad quedó en 0 y se descontaron 2. Si después se anula el ticket, vuelven
+**2**, no 3: el pantalón queda en 2, como estaba antes.
+
+```
+Pantalón: 10
+  ticket A: 3 + 1 pantalones        → 6
+  corrijo A a 6 pantalones          → 4    (vuelven 4, se descuentan 6)
+  anulo A                           → 10   (vuelven los 6)
+```
+
+Dos casos borde que conviene conocer:
+
+- **Tickets de antes de esta función.** No descontaron nada, así que corregirlos
+  o anularlos tampoco toca la cantidad.
+- **Le sacaron la cantidad a la especie en el medio.** Si se anula un ticket que
+  le había descontado, no se le vuelve a crear una cantidad: sigue sin tener.
+
+### Qué cambia en el front
+
+Nada en el formulario del ticket: el body y la respuesta de los tickets son los
+mismos de siempre. Lo único:
+
+- **Después de cargar, corregir o anular un ticket, la cantidad de las especies
+  cambió.** Si tenés la lista de especies en memoria (el estado de esta
+  pantalla, la caché de RTK Query), volvé a pedir `GET /especies` o invalidala.
+- **No bloquees el renglón por cantidad.** Una especie en `0` se sigue pudiendo
+  elegir. Si querés, mostrá la cantidad al lado del nombre como dato
+  ("Pantalón · quedan 4"), pero nunca como un límite.
 
 ---
 
@@ -78,6 +133,7 @@ Sin query params. Devuelve un **array plano**, no un objeto paginado como
     "_id": "6a9f1ead4db41c583b68cf46",
     "nombre": "Pantalón",
     "descripcion": "Largos y de vestir",
+    "cantidad": 100,
     "activo": true,
     "administrador": "6a99e1a758f23da1ae1ea9b8",
     "createdAt": "2026-09-07T20:29:33.446Z",
@@ -103,17 +159,26 @@ Dos detalles que cambian cómo se arma la pantalla:
   Reordenalo en el front con `localeCompare` (está resuelto en el servicio de
   más abajo).
 
-`descripcion` es opcional: si no se cargó, **la clave no viene** en la
-respuesta. En TypeScript va como `descripcion?: string`.
+`descripcion` y `cantidad` son opcionales: si no se cargaron, **la clave no
+viene** en la respuesta (ni como `null`). En TypeScript van como
+`descripcion?: string` y `cantidad?: number`.
+
+> Para mostrar la cantidad usá `especie.cantidad !== undefined`, no
+> `if (especie.cantidad)`: con `0` el segundo la esconde como si no existiera.
 
 ## POST /especies
 
 ```jsonc
 {
-  "nombre": "Pantalón",              // requerido, único en el negocio
-  "descripcion": "Largos y de vestir" // opcional
+  "nombre": "Pantalón",               // requerido, único en el negocio
+  "descripcion": "Largos y de vestir", // opcional
+  "cantidad": 100                     // opcional, entero ≥ 0
 }
 ```
+
+`cantidad` acepta número o string con número (`100` o `"100"`, lo que dé el
+input). Si no viene, viene `null` o viene `""`, la especie se crea **sin**
+cantidad.
 
 Responde `201` con la especie creada, ya con `activo: true`.
 
@@ -123,7 +188,8 @@ Responde `201` con la especie creada, ya con `activo: true`.
 
 | Error | Status | Respuesta |
 | --- | --- | --- |
-| Falta `nombre` (o body vacío) | `400` | `{ error: "Datos inválidos", detalles: { nombre: "Path \`nombre\` is required." } }` |
+| Falta `nombre` (o body vacío) | `400` | `{ error: "Datos inválidos", detalles: { campos: { nombre: "Path \`nombre\` is required." } } }` |
+| `cantidad` negativa, con decimales o que no es un número | `400` | `{ error: "La cantidad tiene que ser un número entero, de 0 para arriba", detalles: { campos: { cantidad: "La cantidad tiene que ser un número entero, de 0 para arriba" } } }` |
 | Nombre repetido en el negocio | `409` | `{ error: "Ya existe un registro con ese nombre" }` |
 
 ## PUT /especies/:id
@@ -131,19 +197,25 @@ Responde `201` con la especie creada, ya con `activo: true`.
 **Parcial**: mandá solo lo que cambió. Lo que no mandes queda como está —
 editar el nombre no borra la descripción.
 
-Acepta tres campos: `nombre`, `descripcion` y `activo`.
+Acepta cuatro campos: `nombre`, `descripcion`, `cantidad` y `activo`.
 
 ```jsonc
 { "nombre": "Pantalones" }     // renombrar
 { "activo": false }            // desactivar (o true para volver a activarla)
 { "descripcion": "" }          // limpiar la descripción: string vacío, no null
+{ "cantidad": 80 }             // cambiar la cantidad
+{ "cantidad": null }           // sacarle la cantidad ("" también sirve)
 ```
+
+Al sacarle la cantidad, la clave **desaparece** de la respuesta: la especie
+queda igual que una que nunca la tuvo.
 
 Responde `200` con la especie actualizada.
 
 | Error | Status | Respuesta |
 | --- | --- | --- |
-| `nombre` vacío | `400` | `{ error: "Datos inválidos", detalles: { nombre: "Path \`nombre\` is required." } }` |
+| `nombre` vacío | `400` | `{ error: "Datos inválidos", detalles: { campos: { nombre: "Path \`nombre\` is required." } } }` |
+| `cantidad` negativa, con decimales o que no es un número | `400` | `{ error: "La cantidad tiene que ser un número entero, de 0 para arriba", detalles: { campos: { cantidad: "La cantidad tiene que ser un número entero, de 0 para arriba" } } }` |
 | El nombre nuevo ya lo tiene otra | `409` | `{ error: "Ya existe un registro con ese nombre" }` |
 | No existe, o es de otro negocio | `404` | `{ error: "Especie no encontrada" }` |
 | Id mal formado (`/especies/pepe`) | `400` | `{ error: 'El valor de "_id" no es válido' }` |
@@ -204,8 +276,10 @@ vista. El detalle completo va en la guía de tickets; acá está lo mínimo.
 }
 ```
 
-El backend calcula `subtotal` y `total`, copia `especieNombre` dentro del ítem y
-pega el ticket a la factura abierta del cliente.
+El backend calcula `subtotal` y `total`, copia `especieNombre` dentro del ítem,
+pega el ticket a la factura abierta del cliente y **descuenta la `cantidad` de
+cada renglón de la cantidad de su especie** (sin bajar de 0, ver
+[Cómo se mueve con los tickets](#cómo-se-mueve-con-los-tickets)).
 
 | Error | Status | Respuesta |
 | --- | --- | --- |
@@ -238,6 +312,8 @@ export interface Especie {
   _id: string;
   nombre: string;
   descripcion?: string;
+  /** Opcional. Entero ≥ 0; ojo que 0 es un valor, no "sin cantidad". */
+  cantidad?: number;
   activo: boolean;
   createdAt: string;
   updatedAt: string;
@@ -247,6 +323,8 @@ export interface Especie {
 export interface DatosEspecie {
   nombre: string;
   descripcion?: string;
+  /** `null` en la edición le saca la cantidad. */
+  cantidad?: number | null;
 }
 
 /**
@@ -291,6 +369,26 @@ export const especiesService = {
 };
 ```
 
+### El input de cantidad
+
+Un `<input type="number" min="0" step="1">`, **sin valor por defecto**: vacío
+quiere decir "sin cantidad", y si lo precargás con `0` toda especie nueva nace
+con cantidad 0.
+
+```ts
+/** Del input al body. Vacío no se manda en el alta, y en la edición la borra. */
+function cantidadDelInput(texto: string): number | null {
+  return texto.trim() === "" ? null : Number(texto);
+}
+
+// Alta: si quedó vacío, ni la mandes
+const cantidad = cantidadDelInput(textoCantidad);
+await especiesService.crear({ nombre, descripcion, ...(cantidad !== null && { cantidad }) });
+
+// Edición: mandala solo si cambió; null le saca la cantidad
+if (cantidad !== (especie.cantidad ?? null)) cambios.cantidad = cantidad;
+```
+
 ### Alta, con el 409 en su campo
 
 ```ts
@@ -301,8 +399,10 @@ try {
 } catch (e) {
   if (!(e instanceof ApiError)) throw e;
 
-  // 400 → detalles = { nombre: "Path `nombre` is required." }
-  setErroresPorCampo(e.detalles ?? {});
+  // Los 400 traen el mensaje por campo en detalles.campos:
+  //   { nombre: "Path `nombre` is required." }
+  //   { cantidad: "La cantidad tiene que ser un número entero, de 0 para arriba" }
+  setErroresPorCampo(e.detalles?.campos ?? {});
 
   // 409 → el nombre ya existe: va bajo ESE campo, no como error general
   if (e.status === 409) setErroresPorCampo({ nombre: "Ya tenés una especie con ese nombre" });
@@ -345,14 +445,31 @@ useEffect(() => { especiesService.listarActivas().then(setEspecies); }, []);
 
 Si vuelve vacío, **no muestres un select vacío**: el administrador no tiene forma
 de adivinar que primero hay que crear una especie. Mostrá el acceso a esta
-pantalla, o dejá crear una ahí mismo (son dos campos).
+pantalla, o dejá crear una ahí mismo (alcanza con el nombre).
+
+La `cantidad` de la especie **no filtra** el selector: una especie con
+`cantidad: 0` se sigue pudiendo elegir. Y como el ticket la descuenta, después
+de guardarlo hay que refrescar la lista:
+
+```ts
+// Con RTK Query: en las mutaciones de crear, editar y anular ticket
+invalidatesTags: (resultado, error, args) => [
+  // ...los tags que ya invalidan
+  { type: "Especie", id: "LISTA" },   // la cantidad de las especies cambió
+],
+
+// Sin caché: volver a pedirlas después de guardar
+await ticketsService.crear(clienteId, datos);   // o editar / anular
+setEspecies(await especiesService.listarActivas());
+```
 
 ---
 
 ## Checklist de la pantalla
 
 ### Listado
-- [ ] Una fila por especie: nombre, descripción y estado
+- [ ] Una fila por especie: nombre, descripción, cantidad (si tiene) y estado
+- [ ] Mostrar la cantidad con `!== undefined`, así el `0` se ve
 - [ ] Ordenar con `localeCompare`, no confiar en el orden de la API
 - [ ] Inactivas visibles pero en gris, o detrás de un toggle "ver inactivas"
 - [ ] Interruptor de activa/inactiva en la fila, sin entrar a editar
@@ -363,8 +480,11 @@ pantalla, o dejá crear una ahí mismo (son dos campos).
 - [ ] Avisar si la lista se hace larga: son categorías, no productos
 
 ### Alta y edición
-- [ ] Un modal alcanza: son dos campos
+- [ ] Un modal alcanza: son tres campos, y solo `nombre` es obligatorio
 - [ ] `nombre` obligatorio, validado antes de enviar
+- [ ] `cantidad` opcional, sin valor por defecto, entero ≥ 0 validado antes de enviar
+- [ ] El 400 de cantidad va bajo el campo cantidad (`detalles.campos.cantidad`)
+- [ ] Para sacarle la cantidad en edición mandar `null` (o `""`)
 - [ ] El 409 va bajo el campo nombre
 - [ ] En edición, precargar y mandar solo lo que cambió
 - [ ] Para limpiar la descripción mandar `""`, no `null`
@@ -377,4 +497,7 @@ pantalla, o dejá crear una ahí mismo (son dos campos).
 ### Integración con el ticket
 - [ ] El selector de cada renglón usa solo las activas
 - [ ] Si no hay ninguna, acceso a esta pantalla en vez de un select vacío
-- [ ] Poder crear una especie sin salir del ticket (son dos campos)
+- [ ] Poder crear una especie sin salir del ticket (alcanza con el nombre)
+- [ ] La cantidad no filtra el selector: una especie en `0` se puede elegir
+- [ ] Después de cargar, corregir o anular un ticket, refrescar las especies
+      (la cantidad cambió en el backend)

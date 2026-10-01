@@ -1,6 +1,6 @@
-import { Button, CampoControlado } from '@/shared/ui/atoms';
+import { Button, CampoControlado, Text } from '@/shared/ui/atoms';
 
-import { AuthLayout, BotonGoogle, EnlaceAuth } from '../components';
+import { AuthLayout, BotonGoogle, ConsentimientoGoogle, EnlaceAuth } from '../components';
 import { useLogin, useLoginGoogle } from '../hooks';
 
 /**
@@ -8,11 +8,12 @@ import { useLogin, useLoginGoogle } from '../hooks';
  * Sin logica de negocio: todo sale de `useLogin`.
  */
 export function LoginScreen() {
-  const { form, enviar, cargando, error } = useLogin();
+  const { form, enviar, cargando, error, pistaGoogle } = useLogin();
   const google = useLoginGoogle();
 
   return (
     <AuthLayout
+      logo
       titulo="Iniciar sesion"
       subtitulo="Entra con tu cuenta para gestionar tu facturacion."
       error={error}
@@ -20,9 +21,19 @@ export function LoginScreen() {
         <>
           <EnlaceAuth href="/recuperar-password" label="Olvidaste tu contrasena?" />
           <EnlaceAuth href="/registro" label="No tenes cuenta? Registrate" />
+          {/* Los avisos se leen sin sesión: a quien no puede entrar (un
+              mantenimiento) le sirve saber por qué. */}
+          <EnlaceAuth href="/avisos" label="Ver avisos de la app" />
         </>
       }
     >
+      {/* Va primero: queda justo debajo del cartel de error. */}
+      {pistaGoogle ? (
+        <Text variant="caption" tone="muted">
+          ¿Te registraste con Google? Tocá «Continuar con Google».
+        </Text>
+      ) : null}
+
       <CampoControlado
         control={form.control}
         name="email"
@@ -60,12 +71,29 @@ export function LoginScreen() {
       />
 
       {google.disponible ? (
-        <BotonGoogle
-          onPress={google.entrar}
-          cargando={google.cargando}
-          deshabilitado={cargando}
-          error={google.error}
-        />
+        <>
+          <BotonGoogle
+            onPress={google.entrar}
+            cargando={google.cargando}
+            deshabilitado={cargando}
+            error={google.error}
+          />
+          {/*
+            Entrar con Google tambien crea la cuenta si no existe, y eso no
+            puede pasar sin consentimiento. Quien ya tiene cuenta entra derecho
+            y nunca ve este dialogo.
+          */}
+          <ConsentimientoGoogle
+            visible={google.consentimiento.visible}
+            cuenta={google.consentimiento.cuenta}
+            valor={google.consentimiento.acepto}
+            onCambiar={google.consentimiento.cambiar}
+            onAceptar={google.consentimiento.confirmar}
+            onCancelar={google.consentimiento.cancelar}
+            cargando={google.consentimiento.cargando}
+            error={google.consentimiento.error}
+          />
+        </>
       ) : null}
     </AuthLayout>
   );

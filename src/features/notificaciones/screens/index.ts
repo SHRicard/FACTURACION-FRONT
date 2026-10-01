@@ -1,0 +1,1 @@
+export { AvisosScreen } from './AvisosScreen';

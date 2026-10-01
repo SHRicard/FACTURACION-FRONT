@@ -1,18 +1,22 @@
 import { useCallback } from 'react';
 
 import { useRefrescarSesion } from '@/features/auth/hooks';
-import { useRefrescarApi } from '@/shared/hooks';
+import { interpretarError } from '@/shared/utils';
+
+import { useResumenDashboardQuery } from '../api/dashboardApi';
 
 /**
- * Datos de el resumen del mes.
+ * El resumen del Inicio: a quien cobrarle, como viene el mes y que paso ultimo.
  *
- * ⚠️ Todavia no hay endpoint propio (GET /dashboard/resumen no existe). Lo que si esta es el
- * `refrescar`, para que el gesto de tirar para abajo quede cableado desde el
- * dia uno: cuando llegue la query, se agrega aca y `refrescar` pasa a ser su
- * `refetch` — la pantalla no se toca.
+ * El Inicio es un tab y queda montado al cambiar de tab (`popToTopOnBlur` solo
+ * vacia los stacks), asi que `refetchOnMountOrArgChange` alcanza para la
+ * primera entrada y nada mas. Se mantiene al dia porque las mutaciones que
+ * mueven plata o clientes invalidan `{Metrica,'TODAS'}` (ticketsApi, pagosApi,
+ * clientesApi, facturasApi).
  */
 export function useDashboard() {
-  const refrescarApi = useRefrescarApi();
+  const consulta = useResumenDashboardQuery(undefined, { refetchOnMountOrArgChange: true });
+  const { refetch } = consulta;
   const refrescarSesion = useRefrescarSesion();
 
   /**
@@ -20,8 +24,16 @@ export function useDashboard() {
    * rueda queda girando.
    */
   const refrescar = useCallback(async () => {
-    await Promise.all([refrescarApi(), refrescarSesion()]);
-  }, [refrescarApi, refrescarSesion]);
+    await Promise.all([refetch(), refrescarSesion()]);
+  }, [refetch, refrescarSesion]);
 
-  return { refrescar };
+  return {
+    resumen: consulta.data ?? null,
+    cargando: consulta.isLoading,
+    /** Se esta re-pidiendo con datos en pantalla: lo de antes sigue a la vista. */
+    actualizando: consulta.isFetching && !consulta.isLoading,
+    error: interpretarError(consulta.error)?.mensaje ?? null,
+    refrescar,
+    reintentar: refrescar,
+  };
 }

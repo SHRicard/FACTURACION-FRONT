@@ -1,3 +1,4 @@
+export { CuentaSuspendidaScreen } from './CuentaSuspendidaScreen';
 export { EntradaScreen } from './EntradaScreen';
 export { LoginScreen } from './LoginScreen';
 export { RecuperarPasswordScreen } from './RecuperarPasswordScreen';

@@ -2,7 +2,7 @@ import { Redirect } from 'expo-router';
 import type { ReactNode } from 'react';
 
 import { useSesion } from '../hooks';
-import { INICIO_POR_ROL, RUTA_LOGIN } from '../rutas';
+import { INICIO_POR_ROL, RUTA_CUENTA_SUSPENDIDA, RUTA_LOGIN, RUTA_POR_PENDIENTE } from '../rutas';
 import type { Rol } from '../types';
 
 interface RutaProtegidaProps {
@@ -23,9 +23,16 @@ interface RutaProtegidaProps {
  * recarga con sesion valida rebotaria a login por un instante.
  */
 export function RutaProtegida({ roles, children }: RutaProtegidaProps) {
-  const { usuario } = useSesion();
+  const { usuario, pendiente, suspension } = useSesion();
 
-  if (!usuario) return <Redirect href={RUTA_LOGIN} />;
+  // Sin sesion porque la suspendieron: el cartel que lo explica, no el login.
+  if (!usuario) return <Redirect href={suspension ? RUTA_CUENTA_SUSPENDIDA : RUTA_LOGIN} />;
+  /*
+   * Le falta el DNI o la marca: todo lo de adentro responderia 403. Tambien
+   * cubre el caso de a mitad de uso —otro dueno lo saco de la marca—, porque
+   * el middleware de la sesion actualiza el pendiente con ese 403.
+   */
+  if (pendiente) return <Redirect href={RUTA_POR_PENDIENTE[pendiente]} />;
   if (!roles.includes(usuario.rol)) return <Redirect href={INICIO_POR_ROL[usuario.rol]} />;
 
   return <>{children}</>;

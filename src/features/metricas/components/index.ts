@@ -1,0 +1,14 @@
+export { BarraApilada, type Segmento } from './BarraApilada';
+export { BarraProporcion } from './BarraProporcion';
+export { BarrasPorMes } from './BarrasPorMes';
+export { BotonWhatsApp } from './BotonWhatsApp';
+export { CifraDestacada } from './CifraDestacada';
+export { DatoChico } from './DatoChico';
+export { EstadoMetrica } from './EstadoMetrica';
+export { GraficoBarras, type PuntoGrafico } from './GraficoBarras';
+export { Pestanas } from './Pestanas';
+export { RenglonCliente } from './RenglonCliente';
+export { SelectorOpciones } from './SelectorOpciones';
+export { SelectorPeriodo } from './SelectorPeriodo';
+export { TarjetaMetrica } from './TarjetaMetrica';
+export { colorDeTono, type TonoMetrica } from './tonos';

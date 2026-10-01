@@ -65,7 +65,6 @@ export function EspeciesMovil() {
           ? `${lista.especies.length} tipos de mercadería`
           : 'Los tipos de mercadería que vendés.'
       }
-      ancho="contenido"
       onVolver={() => router.back()}
       labelVolver="Mas"
       accion={

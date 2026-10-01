@@ -1,4 +1,4 @@
-import { baseApi } from '@/services/api';
+import { baseApi, esRespuestaInesperada, respuestaInesperada } from '@/services/api';
 
 import { respuestaAnulacionSchema, respuestaTicketSchema, ticketSchema } from '../schemas';
 import type { RespuestaAnulacion, RespuestaTicket, Ticket, TicketNuevo } from '../types';
@@ -9,31 +9,58 @@ import type { RespuestaAnulacion, RespuestaTicket, Ticket, TicketNuevo } from '.
  * Los tres que escriben (alta, edicion y anulacion) invalidan el cliente: la
  * deuda que muestran el listado y la ficha acaba de cambiar. La factura viene
  * en la respuesta ya recalculada, asi que no hace falta volver a pedirla.
+ *
+ * También invalidan el Inicio y las métricas (`{Metrica,'TODAS'}`) y Mi marca
+ * (sus estadísticas): cambian con cada ticket, y el tab Inicio no se desmonta
+ * al cambiar de tab, así que sin esto queda con los números viejos. Y las
+ * especies: el backend les descuenta la `cantidad` al cargar, y se la ajusta
+ * al corregir o anular.
+ *
+ * La respuesta se valida con `rawResponseSchema` (antes de transformar) y no
+ * con un `.parse` en `transformResponse`: así una falla de schema se vuelve un
+ * error manejado (`respuestaInesperada`) y los tags se invalidan igual, porque
+ * el servidor ya guardó. La salida del schema, ya con `id`, es la data.
  */
 export const ticketsApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     /**
-     * Carga un ticket en la factura abierta del cliente.
+     * Carga un ticket en la factura activa del cliente, aunque ya este vencida:
+     * se suma a lo que debe.
      *
      * El backend calcula los subtotales y el total, copia el nombre de la
-     * especie adentro de cada item y devuelve la factura al dia. Ojo: esa
-     * factura puede ser una NUEVA (ver `useGuardarTicket`).
+     * especie adentro de cada item y devuelve la factura al dia. Si es el
+     * primer ticket, `venceEl` fija la fecha acordada.
      */
-    crearTicket: build.mutation<RespuestaTicket, { clienteId: string; ticket: TicketNuevo }>({
-      query: ({ clienteId, ticket }) => ({
+    crearTicket: build.mutation<
+      RespuestaTicket,
+      { clienteId: string; ticket: TicketNuevo; claveIdempotencia: string }
+    >({
+      query: ({ clienteId, ticket, claveIdempotencia }) => ({
         url: `/clientes/${encodeURIComponent(clienteId)}/tickets`,
         method: 'POST',
         body: ticket,
+        // Una por intento de guardado: el reintento con la misma clave no
+        // carga el ticket dos veces (K1).
+        headers: { 'Idempotency-Key': claveIdempotencia },
       }),
-      transformResponse: (respuesta: unknown) => respuestaTicketSchema.parse(respuesta),
-      invalidatesTags: (resultado, _error, { clienteId }) => [
+      rawResponseSchema: respuestaTicketSchema,
+      catchSchemaFailure: respuestaInesperada,
+      invalidatesTags: (resultado, error, { clienteId }) => [
         { type: 'Cliente', id: clienteId },
         { type: 'Cliente', id: 'LISTA' },
-        // La factura que devuelve la respuesta: puede ser una nueva, si el
-        // backend cerro el periodo vencido en este mismo request.
-        ...(resultado ? [{ type: 'Factura' as const, id: resultado.factura.id }] : []),
+        // La factura activa, con el ticket ya sumado. Puede ser una recien
+        // abierta si la anterior se habia saldado. Si la respuesta no se pudo
+        // leer, no sabemos cual fue: se invalidan todas.
+        ...(resultado
+          ? [{ type: 'Factura' as const, id: resultado.factura.id }]
+          : esRespuestaInesperada(error)
+            ? ['Factura' as const]
+            : []),
         { type: 'Factura', id: 'LISTA' },
         { type: 'Factura', id: 'VENCIDAS' },
+        { type: 'Metrica', id: 'TODAS' },
+        'Marca',
+        { type: 'Especie', id: 'LISTA' },
       ],
     }),
 
@@ -65,14 +92,22 @@ export const ticketsApi = baseApi.injectEndpoints({
         method: 'PUT',
         body: ticket,
       }),
-      transformResponse: (respuesta: unknown) => respuestaTicketSchema.parse(respuesta),
-      invalidatesTags: (resultado, _error, { id, clienteId }) => [
+      rawResponseSchema: respuestaTicketSchema,
+      catchSchemaFailure: respuestaInesperada,
+      invalidatesTags: (resultado, error, { id, clienteId }) => [
         { type: 'Ticket', id },
         { type: 'Cliente', id: clienteId },
         { type: 'Cliente', id: 'LISTA' },
-        ...(resultado ? [{ type: 'Factura' as const, id: resultado.factura.id }] : []),
+        ...(resultado
+          ? [{ type: 'Factura' as const, id: resultado.factura.id }]
+          : esRespuestaInesperada(error)
+            ? ['Factura' as const]
+            : []),
         { type: 'Factura', id: 'LISTA' },
         { type: 'Factura', id: 'VENCIDAS' },
+        { type: 'Metrica', id: 'TODAS' },
+        'Marca',
+        { type: 'Especie', id: 'LISTA' },
       ],
     }),
 
@@ -93,14 +128,22 @@ export const ticketsApi = baseApi.injectEndpoints({
         method: 'DELETE',
         ...(motivo ? { body: { motivo } } : {}),
       }),
-      transformResponse: (respuesta: unknown) => respuestaAnulacionSchema.parse(respuesta),
-      invalidatesTags: (resultado, _error, { id, clienteId }) => [
+      rawResponseSchema: respuestaAnulacionSchema,
+      catchSchemaFailure: respuestaInesperada,
+      invalidatesTags: (resultado, error, { id, clienteId }) => [
         { type: 'Ticket', id },
         { type: 'Cliente', id: clienteId },
         { type: 'Cliente', id: 'LISTA' },
-        ...(resultado ? [{ type: 'Factura' as const, id: resultado.factura.id }] : []),
+        ...(resultado
+          ? [{ type: 'Factura' as const, id: resultado.factura.id }]
+          : esRespuestaInesperada(error)
+            ? ['Factura' as const]
+            : []),
         { type: 'Factura', id: 'LISTA' },
         { type: 'Factura', id: 'VENCIDAS' },
+        { type: 'Metrica', id: 'TODAS' },
+        'Marca',
+        { type: 'Especie', id: 'LISTA' },
       ],
     }),
   }),

@@ -6,10 +6,10 @@ Imágenes e íconos que usa **más de una feature**. Si lo usa una sola, va en
 
 ## Qué formato usar
 
-| Caso | Formato | Por qué |
-|---|---|---|
-| Logos e íconos propios | **SVG** | Nítidos en cualquier densidad, sin mantener `@2x`/`@3x`, y siguen el theme por la prop `color`. |
-| Fotos e ilustraciones | **PNG / JPG** con `@2x` y `@3x` | No hay ventaja vectorial; se importa solo el nombre base y Metro elige la densidad. |
+| Caso                   | Formato                         | Por qué                                                                                         |
+| ---------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Logos e íconos propios | **SVG**                         | Nítidos en cualquier densidad, sin mantener `@2x`/`@3x`, y siguen el theme por la prop `color`. |
+| Fotos e ilustraciones  | **PNG / JPG** con `@2x` y `@3x` | No hay ventaja vectorial; se importa solo el nombre base y Metro elige la densidad.             |
 
 ## Reglas
 

@@ -1,7 +1,24 @@
 import { baseApi } from '@/services/api';
 
-import { facturaDetalleSchema, listaVencidasSchema, paginaFacturasSchema } from '../schemas';
-import type { FacturaDetalle, FacturaEnLista, FiltrosFacturas, PaginaFacturas } from '../types';
+import {
+  bajaEnlacesSchema,
+  enlaceFacturaSchema,
+  envioFacturaSchema,
+  facturaDetalleSchema,
+  facturaSchema,
+  listaVencidasSchema,
+  paginaFacturasSchema,
+} from '../schemas';
+import type {
+  BajaEnlaces,
+  EnlaceFactura,
+  EnvioFactura,
+  Factura,
+  FacturaDetalle,
+  FacturaEnLista,
+  FiltrosFacturas,
+  PaginaFacturas,
+} from '../types';
 
 /** Cuantas facturas trae cada pagina. El backend acepta hasta 100. */
 const POR_PAGINA = 20;
@@ -28,18 +45,23 @@ function armarQuery(filtros: FiltrosFacturas, pagina: number): string {
 }
 
 /**
- * Endpoints de facturacion. Solo lectura: cerrar, marcar pagada y registrar
- * pagos son la etapa de cobranza y van aparte.
+ * Endpoints de facturacion: leerlas y mandarselas al cliente. Cerrar, marcar
+ * pagada y registrar pagos son la etapa de cobranza y van aparte.
+ *
+ * El PDF no esta aca: se baja directo a un archivo (`useEnviarFactura`), no es
+ * JSON y no tiene nada que cachear.
  */
 export const facturasApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     /**
      * Listado con scroll infinito.
      *
-     * Es una `infiniteQuery` y no una query comun: asi RTK Query acumula las
-     * paginas en una sola entrada de cache, y `refetch` (el de tirar para
-     * abajo) vuelve a pedir todas las cargadas en vez de tirar al usuario de
-     * vuelta a la primera.
+     * Es una `infiniteQuery`: RTK Query acumula las paginas en una sola entrada de
+     * cache a medida que se scrollea. Cuando un tag se invalida (un ticket, un
+     * pago, un cliente renombrado) se vuelven a pedir TODAS las paginas
+     * cargadas: si no, la lista vuelve a 20 filas y se pierde el scroll. El
+     * gesto de tirar para abajo pide solo la primera
+     * (`refetch({ refetchCachedPages: false })` en useFacturas).
      */
     listarFacturas: build.infiniteQuery<PaginaFacturas, FiltrosFacturas, number>({
       infiniteQueryOptions: {
@@ -47,6 +69,10 @@ export const facturasApi = baseApi.injectEndpoints({
         // `undefined` = no hay mas: es lo que apaga el `hasNextPage` del hook.
         getNextPageParam: (ultima) =>
           ultima.pagina < ultima.paginas ? ultima.pagina + 1 : undefined,
+        // Al invalidar un tag se re-piden en fila todas las paginas que el
+        // usuario llego a scrollear (una request por pagina), asi la fila que
+        // cambio se actualiza sin que la lista se achique debajo del dedo.
+        refetchCachedPages: true,
       },
       query: ({ queryArg, pageParam }) => ({ url: `/facturas${armarQuery(queryArg, pageParam)}` }),
       transformResponse: (respuesta: unknown) => paginaFacturasSchema.parse(respuesta),
@@ -74,8 +100,90 @@ export const facturasApi = baseApi.injectEndpoints({
       transformResponse: (respuesta: unknown) => listaVencidasSchema.parse(respuesta),
       providesTags: [{ type: 'Factura', id: 'VENCIDAS' }],
     }),
+
+    /**
+     * El link publico (7 dias) y el mensaje de WhatsApp ya escrito. Generar uno
+     * nuevo NO mata los anteriores. Sin tags: no cambia nada de la cuenta.
+     */
+    enlaceFactura: build.mutation<EnlaceFactura, string>({
+      query: (id) => ({
+        url: `/facturas/${encodeURIComponent(id)}/enlace`,
+        method: 'POST',
+        body: {},
+      }),
+      transformResponse: (respuesta: unknown) => enlaceFacturaSchema.parse(respuesta),
+    }),
+
+    /** Por mail, con el PDF adjunto. Sin email, va al del cliente. */
+    enviarFacturaPorMail: build.mutation<
+      EnvioFactura,
+      { id: string; email?: string; mensaje?: string }
+    >({
+      query: ({ id, ...cuerpo }) => ({
+        url: `/facturas/${encodeURIComponent(id)}/enviar`,
+        method: 'POST',
+        body: cuerpo,
+      }),
+      transformResponse: (respuesta: unknown) => envioFacturaSchema.parse(respuesta),
+    }),
+
+    /** Todos los links mandados de esta factura dejan de abrir, al toque. */
+    darDeBajaEnlaces: build.mutation<BajaEnlaces, string>({
+      query: (id) => ({ url: `/facturas/${encodeURIComponent(id)}/enlace`, method: 'DELETE' }),
+      transformResponse: (respuesta: unknown) => bajaEnlacesSchema.parse(respuesta),
+    }),
+
+    /**
+     * "Te pago el 30": la nueva fecha acordada, `aaaa-mm-dd`. Solo en la activa
+     * y con tickets. El cumplimiento NO cambia: se mide contra la original.
+     */
+    reprogramarVencimiento: build.mutation<
+      Factura,
+      { id: string; clienteId: string; venceEl: string }
+    >({
+      query: ({ id, venceEl }) => ({
+        url: `/facturas/${encodeURIComponent(id)}/vencimiento`,
+        method: 'PUT',
+        body: { venceEl },
+      }),
+      transformResponse: (respuesta: unknown) => facturaSchema.parse(respuesta),
+      invalidatesTags: (_resultado, _error, { id, clienteId }) => [
+        { type: 'Factura', id },
+        { type: 'Factura', id: 'LISTA' },
+        // Deja de figurar vencida: cambia la cola de cobranza y el cliente.
+        { type: 'Factura', id: 'VENCIDAS' },
+        { type: 'Cliente', id: clienteId },
+        { type: 'Cliente', id: 'LISTA' },
+        { type: 'Metrica', id: 'TODAS' },
+      ],
+    }),
+
+    /**
+     * Cerrarla a mano. Solo para el caso raro de una factura en $0 SIN pagos a
+     * cuenta (todo se pago en el mostrador): el pago que la deja en cero ya la
+     * cierra solo. Con deuda, el backend responde 400.
+     */
+    cerrarFactura: build.mutation<Factura, { id: string; clienteId: string }>({
+      query: ({ id }) => ({ url: `/facturas/${encodeURIComponent(id)}/pagada`, method: 'PUT' }),
+      transformResponse: (respuesta: unknown) => facturaSchema.parse(respuesta),
+      invalidatesTags: (_resultado, _error, { id, clienteId }) => [
+        { type: 'Factura', id },
+        { type: 'Factura', id: 'LISTA' },
+        { type: 'Cliente', id: clienteId },
+        { type: 'Cliente', id: 'LISTA' },
+        { type: 'Metrica', id: 'TODAS' },
+      ],
+    }),
   }),
 });
 
-export const { useListarFacturasInfiniteQuery, useFacturaDetalleQuery, useFacturasVencidasQuery } =
-  facturasApi;
+export const {
+  useListarFacturasInfiniteQuery,
+  useFacturaDetalleQuery,
+  useFacturasVencidasQuery,
+  useEnlaceFacturaMutation,
+  useEnviarFacturaPorMailMutation,
+  useDarDeBajaEnlacesMutation,
+  useReprogramarVencimientoMutation,
+  useCerrarFacturaMutation,
+} = facturasApi;

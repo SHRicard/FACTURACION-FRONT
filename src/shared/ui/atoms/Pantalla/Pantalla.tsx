@@ -11,7 +11,7 @@ import { createStyles } from './Pantalla.styles';
 import type { PantallaProps } from './Pantalla.types';
 
 /**
- * Marco de una pantalla: area segura, ancho maximo y encabezado.
+ * Marco de una pantalla: area segura, margenes laterales y encabezado.
  *
  * Existe para que las pantallas no repitan cada una su propio SafeAreaView +
  * Container + titulo, que es donde se cuelan los paddings y tamanos a mano.
@@ -23,7 +23,6 @@ import type { PantallaProps } from './Pantalla.types';
 function PantallaComponent({
   titulo,
   descripcion,
-  ancho = 'ancho',
   accion,
   onVolver,
   labelVolver,
@@ -40,7 +39,7 @@ function PantallaComponent({
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <Container ancho={ancho} style={[styles.contenido, style]}>
+      <Container style={[styles.contenido, style]}>
         <View style={styles.cabecera}>
           {/*
             Con flecha de volver, la accion sube a la barra de navegacion y el

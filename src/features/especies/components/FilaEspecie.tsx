@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Switch, View } from 'react-native';
 import { Badge, BotonIcono, Text } from '@/shared/ui/atoms';
 import { useTheme, type Theme } from '@/theme';
 
+import { textoCantidad } from '../formato';
 import type { Especie } from '../types';
 
 interface FilaEspecieProps {
@@ -25,12 +26,15 @@ function FilaEspecieComponent({ especie, onEditar, onAlternar, onBorrar }: FilaE
   const theme = useTheme();
   const styles = createStyles(theme);
 
+  // `!== undefined` y no truthy: una cantidad de 0 se muestra, no se esconde.
+  const cantidad = especie.cantidad !== undefined ? textoCantidad(especie.cantidad) : null;
+
   return (
     <Pressable
       onPress={() => onEditar(especie)}
       style={({ pressed }) => [styles.fila, pressed && styles.presionada]}
       accessibilityRole="button"
-      accessibilityLabel={`${especie.nombre}${especie.activo ? '' : ', inactiva'}`}
+      accessibilityLabel={`${especie.nombre}${cantidad ? `, ${cantidad}` : ''}${especie.activo ? '' : ', inactiva'}`}
       accessibilityHint="Editar la especie"
     >
       <View style={[styles.datos, !especie.activo && styles.apagado]}>
@@ -45,6 +49,11 @@ function FilaEspecieComponent({ especie, onEditar, onAlternar, onBorrar }: FilaE
         {especie.descripcion ? (
           <Text variant="caption" tone="muted" numberOfLines={2}>
             {especie.descripcion}
+          </Text>
+        ) : null}
+        {cantidad ? (
+          <Text variant="caption" weight="medium" tone="muted">
+            {cantidad}
           </Text>
         ) : null}
       </View>

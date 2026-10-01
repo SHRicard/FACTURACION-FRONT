@@ -25,6 +25,8 @@ export { Pantalla } from './Pantalla';
 export type { PantallaProps } from './Pantalla';
 export { SelectorEstiloCabecera } from './SelectorEstiloCabecera';
 export { SelectorEstiloTabs } from './SelectorEstiloTabs';
+export { SelectorFecha } from './SelectorFecha';
+export type { SelectorFechaProps } from './SelectorFecha';
 export { SelectorModo } from './SelectorModo';
 export { SelectorTipografia } from './SelectorTipografia';
 export { Text } from './Text';

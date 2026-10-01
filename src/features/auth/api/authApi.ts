@@ -13,6 +13,7 @@ import {
 } from '../schemas';
 import type {
   CambiarPasswordForm,
+  DatosGoogle,
   LoginForm,
   RecuperarPasswordForm,
   RegistroForm,
@@ -20,7 +21,7 @@ import type {
   Sesion,
   SesionGoogle,
   TokenResetValido,
-  Usuario,
+  UsuarioActual,
 } from '../types';
 
 /**
@@ -32,6 +33,15 @@ import type {
  */
 export const authApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
+    /*
+     * Las mutations que ABREN sesión (login, registro, Google, reseteo y cambio
+     * de contraseña) no invalidan 'Usuario' a propósito. RTK hace el refetch de
+     * `/auth/me` dentro del mismo dispatch del fulfilled, y `prepareHeaders`
+     * lee el storage antes de que `useAbrirSesion` guarde el token nuevo: el
+     * pedido salía sin token o con el viejo, volvía 401 y el middleware cerraba
+     * la sesión recién abierta en cada intento (C1). La sesión nueva ya viene
+     * en la respuesta y va directo al slice con `sesionIniciada`.
+     */
     login: build.mutation<Sesion, LoginForm>({
       query: (credenciales) => ({
         url: '/auth/login',
@@ -39,46 +49,53 @@ export const authApi = baseApi.injectEndpoints({
         body: loginSchema.parse(credenciales),
       }),
       transformResponse: (respuesta: unknown) => sesionSchema.parse(respuesta),
-      invalidatesTags: ['Usuario'],
     }),
 
     registro: build.mutation<Sesion, RegistroForm>({
       query: (datos) => {
         // `confirmarPassword` es solo del formulario: no viaja al backend.
+        // `aceptoTerminosYCondiciones` SI: sin el, el backend responde 400.
         const { confirmarPassword: _descartado, ...cuerpo } = registroSchema.parse(datos);
         return { url: '/auth/registro', method: 'POST', body: cuerpo };
       },
       transformResponse: (respuesta: unknown) => sesionSchema.parse(respuesta),
-      invalidatesTags: ['Usuario'],
     }),
 
     /**
-     * Login con Google. El front manda UNICAMENTE el ID token: el email y el
-     * nombre los saca el backend del token ya verificado contra las claves
-     * publicas de Google. Mandar el email por separado seria confiar en algo
-     * que cualquiera puede escribir.
+     * Login con Google. Del lado de la identidad el front manda UNICAMENTE el
+     * ID token: el email y el nombre los saca el backend del token ya
+     * verificado contra las claves publicas de Google. Mandar el email por
+     * separado seria confiar en algo que cualquiera puede escribir.
+     *
+     * `aceptoTerminosYCondiciones` viaja SOLO si la persona tildo la casilla, y
+     * por eso es opcional: este endpoint tambien crea cuentas, asi que sin
+     * consentimiento el backend responde 400 y el hook abre la casilla en un
+     * dialogo. Mandar `true` siempre seria aceptar por ella.
      *
      * Devuelve la misma sesion que el login normal mas `caso`, que dice si la
      * cuenta se creo, ya existia, o se vinculo con una que tenia contrasena.
      */
-    loginGoogle: build.mutation<SesionGoogle, string>({
-      query: (idToken) => ({
+    loginGoogle: build.mutation<SesionGoogle, DatosGoogle>({
+      query: ({ idToken, aceptoTerminosYCondiciones }) => ({
         url: '/auth/google',
         method: 'POST',
-        body: { idToken },
+        body:
+          aceptoTerminosYCondiciones === undefined
+            ? { idToken }
+            : { idToken, aceptoTerminosYCondiciones },
       }),
       transformResponse: (respuesta: unknown) => sesionGoogleSchema.parse(respuesta),
-      invalidatesTags: ['Usuario'],
     }),
 
     /**
      * Rehidrata la sesion al abrir la app: dice si el token guardado sigue
-     * valiendo y trae el usuario al dia. Es una query (no mutation) para que
-     * RTK Query la cachee y no la repita en cada pantalla que la pida.
+     * valiendo y trae el usuario al dia, con lo que le falta (`pendiente`). Es
+     * una query (no mutation) para que RTK Query la cachee y no la repita en
+     * cada pantalla que la pida.
      */
-    usuarioActual: build.query<Usuario, void>({
+    usuarioActual: build.query<UsuarioActual, void>({
       query: () => ({ url: '/auth/me' }),
-      transformResponse: (respuesta: unknown) => usuarioActualSchema.parse(respuesta).usuario,
+      transformResponse: (respuesta: unknown) => usuarioActualSchema.parse(respuesta),
       providesTags: ['Usuario'],
     }),
 
@@ -108,7 +125,6 @@ export const authApi = baseApi.injectEndpoints({
         body: { token, password },
       }),
       transformResponse: (respuesta: unknown) => sesionSchema.parse(respuesta),
-      invalidatesTags: ['Usuario'],
     }),
 
     /**
@@ -125,7 +141,6 @@ export const authApi = baseApi.injectEndpoints({
         };
       },
       transformResponse: (respuesta: unknown) => sesionSchema.parse(respuesta),
-      invalidatesTags: ['Usuario'],
     }),
   }),
 });

@@ -14,12 +14,12 @@ import { useEstiloTabs, useTheme, type Theme } from '@/theme';
 /**
  * Quien puede entrar al area de administrador.
  *
- * `super_admin` esta de forma TEMPORAL, mientras su propia seccion no existe:
- * `INICIO_POR_ROL` (en `features/auth/rutas.ts`) lo manda aca, asi que si no
- * estuviera en esta lista el guard lo rebotaria en un loop infinito. Los dos
- * lugares se cambian juntos el dia que se arme el area de super admin.
+ * El `super_admin` NO: no opera un negocio, y las rutas del negocio le
+ * responden 403. Tiene su propia area en `/super-admin`. Esta lista y
+ * `INICIO_POR_ROL` (en `features/auth/rutas.ts`) se cambian juntos: si uno
+ * manda aca a un rol que el otro no deja entrar, el guard rebota para siempre.
  */
-const ROLES_PERMITIDOS: readonly Rol[] = ['administrador', 'super_admin'];
+const ROLES_PERMITIDOS: readonly Rol[] = ['administrador'];
 
 /**
  * Los tabs en el ORDEN en que se dibujan. Es la fuente de verdad del orden: lo

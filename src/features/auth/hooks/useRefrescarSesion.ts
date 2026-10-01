@@ -21,8 +21,8 @@ export function useRefrescarSesion() {
 
   return useCallback(async () => {
     try {
-      const usuario = await pedirUsuario().unwrap();
-      dispatch(sesionRestaurada(usuario));
+      const actual = await pedirUsuario().unwrap();
+      dispatch(sesionRestaurada(actual));
     } catch {
       // Silencio a proposito: ver el comentario de arriba.
     }

@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
-import { useForm } from 'react-hook-form';
+import { useCallback } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
 
 import { aplicarDetalles, interpretarError } from '@/shared/utils';
 
@@ -17,11 +18,32 @@ export function useRegistro() {
 
   const form = useForm<RegistroForm>({
     resolver: zodResolver(registroSchema),
-    defaultValues: { nombre: '', email: '', password: '', confirmarPassword: '' },
+    defaultValues: {
+      nombre: '',
+      email: '',
+      password: '',
+      confirmarPassword: '',
+      // SIN tildar, siempre. Una casilla marcada de fabrica es motivo de
+      // rechazo en la revision de Google Play, y ademas no seria consentimiento.
+      aceptoTerminosYCondiciones: false,
+    },
     mode: 'onBlur',
   });
 
   const detalle = interpretarError(error);
+
+  // `useWatch` y no `form.watch`: el compilador de React no puede memoizar `watch`.
+  const acepto = useWatch({ control: form.control, name: 'aceptoTerminosYCondiciones' });
+
+  const cambiarAcepto = useCallback(
+    (valor: boolean) =>
+      form.setValue('aceptoTerminosYCondiciones', valor, {
+        // Antes del primer envio no hay error que limpiar: validar en cada
+        // toque solo haria parpadear un cartel rojo mientras se decide.
+        shouldValidate: form.formState.isSubmitted,
+      }),
+    [form],
+  );
 
   const enviar = form.handleSubmit(async (datos) => {
     try {
@@ -30,7 +52,7 @@ export function useRegistro() {
       abrirSesion(sesion);
       router.replace('/');
     } catch (fallo) {
-      aplicarDetalles(form, interpretarError(fallo)?.detalles ?? null);
+      aplicarDetalles(form, interpretarError(fallo));
     }
   });
 
@@ -39,5 +61,11 @@ export function useRegistro() {
     enviar,
     cargando: isLoading,
     error: detalle?.mensaje ?? null,
+    /** La casilla de los terminos: su valor, como cambiarlo y su error. */
+    terminos: {
+      acepto,
+      cambiar: cambiarAcepto,
+      error: form.formState.errors.aceptoTerminosYCondiciones?.message ?? null,
+    },
   };
 }

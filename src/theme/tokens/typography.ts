@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 import {
   PAR_TIPOGRAFICO_POR_DEFECTO,
   paresTipograficos,
@@ -12,6 +14,12 @@ export type Typography = {
    * enteran, siguen pidiendo `theme.typography.family.text.bold`.
    */
   family: FamiliasTipograficas;
+  /**
+   * Monoespaciada del sistema, para lo que se lee caracter por caracter: el
+   * stack de un error, una huella. No sigue al par elegido: ninguna de las
+   * familias del par es monoespaciada.
+   */
+  mono: string;
 };
 
 export const typography: Typography = {
@@ -22,4 +30,6 @@ export const typography: Typography = {
     heading: 28,
   },
   family: paresTipograficos[PAR_TIPOGRAFICO_POR_DEFECTO].family,
+  // Las fuentes SI son de la plataforma: iOS no trae ninguna llamada `monospace`.
+  mono: Platform.select({ ios: 'Menlo', default: 'monospace' }),
 };

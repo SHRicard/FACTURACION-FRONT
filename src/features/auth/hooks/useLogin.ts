@@ -2,10 +2,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
 import { useForm } from 'react-hook-form';
 
+import { GOOGLE_HABILITADO } from '@/config';
 import { aplicarDetalles, interpretarError } from '@/shared/utils';
 
 import { useLoginMutation } from '../api/authApi';
-import { loginSchema } from '../schemas';
+import { RUTA_CUENTA_SUSPENDIDA } from '../rutas';
+import { CODIGO_CUENTA_SUSPENDIDA, loginSchema } from '../schemas';
 import type { LoginForm } from '../types';
 import { useAbrirSesion } from './useAbrirSesion';
 
@@ -32,7 +34,13 @@ export function useLogin() {
       abrirSesion(sesion);
       router.replace('/');
     } catch (fallo) {
-      aplicarDetalles(form, interpretarError(fallo)?.detalles ?? null);
+      const detalleFallo = interpretarError(fallo);
+      // Suspendida: el cartel con el motivo lo muestra su propia pantalla.
+      if (detalleFallo?.codigo === CODIGO_CUENTA_SUSPENDIDA) {
+        router.replace(RUTA_CUENTA_SUSPENDIDA);
+        return;
+      }
+      aplicarDetalles(form, detalleFallo);
     }
   });
 
@@ -41,5 +49,11 @@ export function useLogin() {
     enviar,
     cargando: isLoading,
     error: detalle?.mensaje ?? null,
+    /**
+     * Debajo del error, "¿Te registraste con Google?". El back ya no dice qué
+     * emails usan Google (K14): responde el mismo 401 para todo, así que la
+     * pista va siempre ante un 401.
+     */
+    pistaGoogle: detalle?.status === 401 && GOOGLE_HABILITADO,
   };
 }

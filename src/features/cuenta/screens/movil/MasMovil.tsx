@@ -1,5 +1,14 @@
 import { useRouter } from 'expo-router';
-import { Compass, LogOut, Settings, Shapes, User } from 'lucide-react-native';
+import {
+  ChartColumn,
+  Compass,
+  LogOut,
+  Megaphone,
+  Settings,
+  Shapes,
+  Store,
+  User,
+} from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
@@ -59,6 +68,18 @@ export function MasMovil() {
         */}
         <View style={styles.grupo}>
           <OpcionMenu
+            icono={<ChartColumn size={tamanoIcono} color={theme.colors.text} />}
+            titulo="Métricas"
+            descripcion="Los números del negocio: deuda, cobranza y ventas"
+            onPress={() => router.push('/admin/cuenta/metricas')}
+          />
+          <OpcionMenu
+            icono={<Store size={tamanoIcono} color={theme.colors.text} />}
+            titulo="Mi marca"
+            descripcion="Tu negocio, lo que mueve y sus dueños"
+            onPress={() => router.push('/admin/cuenta/marca')}
+          />
+          <OpcionMenu
             icono={<Shapes size={tamanoIcono} color={theme.colors.text} />}
             titulo="Especies"
             descripcion="Los tipos de mercaderia que vendes"
@@ -78,6 +99,12 @@ export function MasMovil() {
             titulo="Configuracion"
             descripcion="Apariencia y tipografia"
             onPress={() => router.push('/admin/cuenta/configuracion')}
+          />
+          <OpcionMenu
+            icono={<Megaphone size={tamanoIcono} color={theme.colors.text} />}
+            titulo="Avisos"
+            descripcion="Mantenimientos, novedades y versiones nuevas"
+            onPress={() => router.push('/avisos')}
           />
           {/*
             Solo aparece cuando la guia NO se esta viendo: con la hoja abierta,

@@ -21,14 +21,14 @@ export function RecuperarPasswordScreen() {
   if (enviado) {
     return (
       <AuthLayout
-        titulo="Revisa tu correo"
-        subtitulo="Si el email existe en nuestro sistema, te mandamos las instrucciones para recuperar tu contrasena."
+        titulo="Revisá tu correo"
+        subtitulo="Te mandamos un mail con un link para elegir la contraseña nueva. Abrilo desde este teléfono."
         footer={<EnlaceAuth href="/login" label="Volver a iniciar sesion" />}
       >
         <View style={styles.confirmacion} accessibilityLiveRegion="polite">
           <MailCheck size={40} color={theme.colors.success} />
           <Text variant="body" tone="muted" center>
-            {mensaje ?? 'Revisa tambien la carpeta de spam.'}
+            {mensaje ?? 'Revisá también la carpeta de spam.'}
           </Text>
         </View>
       </AuthLayout>
@@ -37,6 +37,7 @@ export function RecuperarPasswordScreen() {
 
   return (
     <AuthLayout
+      logo
       titulo="Recuperar contrasena"
       subtitulo="Ingresa tu email y te mandamos un enlace para crear una nueva."
       error={error}
